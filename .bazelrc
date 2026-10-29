@@ -1,0 +1,66 @@
+# This repo uses WORKSPACE for dependency management; disable bzlmod which is
+# on by default in Bazel 7.
+common --noenable_bzlmod
+
+# We always want to use the bazel build tag to inform CC that it's building in
+# a bazel environment. We additionally include production, which controls
+# console's asset loading strategy. Bazel builds are only used for deployments
+# which makes this a reasonable default.
+build --define gotags=bazel,production --symlink_prefix=_bazel/
+build --workspace_status_command ./build/stamp.sh
+
+# rules_proto seems to strip comments from .proto files by default. I have no
+# idea why you would ever want this but it appears to only be configurable via
+# this CLI flag. See https://github.com/bazelbuild/rules_go/issues/1519.
+build --protocopt=--include_source_info
+
+# NOTE: Remote caching is currently disabled as it opens up a vector for supply
+# chain attacks that we don't currently have the resources to fully
+# investigate. dev-inf will be working on caching early 2023 and we should be
+# able to leverage their work.
+# Configure remote caching with a GCS bucket as the backend within CI to speed up builds and tests.
+# run:ci --remote_cache=https://storage.googleapis.com/cockroach-managed-staging-bazel-cache --google_credentials=creds.json
+# test:ci --remote_cache=https://storage.googleapis.com/cockroach-managed-staging-bazel-cache --google_credentials=creds.json
+# build:ci --remote_cache=https://storage.googleapis.com/cockroach-managed-staging-bazel-cache --google_credentials=creds.json
+
+# Mark builds from CI as release builds.
+build:ci '--workspace_status_command=./build/stamp.sh release'
+
+# When running in CI, always build linux amd64. This is technically
+# redundant as this is CI's default platform. We explicitly set this
+# to ensure that containers built by CI are always suitable for
+# deployment into our production and staging environments.
+build:ci --platforms=//:linux_amd64
+
+# Enable "pure" build mode for go (disable cgo and possibly some other things).
+# Because _reasons_ (See above), we cannot build binaries for containers with
+# cgo. Previously, we managed this with bazel's platforms and only toggled off
+# cgo in ci/container builds by passing in --platform. This would cause any
+# standard invocation to a container build to create an invalid container with
+# very cryptic errors. Rather than diseminating the need to pass in --platform,
+# we disable cgo globally via a go_rules flag. This has the added benefit of
+# allowing us to share caches when building containers and building binaries
+# locally. It will also prevent any "gotcha" issues should someone add cgo to
+# our build and then discover failures in CI.
+build --@io_bazel_rules_go//go/config:pure
+
+# Recommended changes from https://blog.aspect.dev/bazelrc-flags
+
+# Don't let environment variables like $PATH sneak into the build, which can
+# cause massive cache misses when they change.
+build --incompatible_strict_action_env
+
+# Improve performance of sandbox by skipping the older
+# my_repo/external/other_repo symlinks. Note, some rules may fail under this
+# flag, please file issues with the rule author.
+build --nolegacy_external_runfiles
+
+# Base image configuration for enterprise deployments
+# Use --config=ubi to switch from distroless to UBI-minimal
+build:ubi --define use_ubi=true
+build:ubi --define gotags=bazel,production,ubi
+
+# Import any user configuration, if available.
+try-import %workspace%/.bazelrc.user
+
+# vi: ft=sh

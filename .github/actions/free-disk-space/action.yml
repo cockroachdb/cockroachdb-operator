@@ -1,0 +1,21 @@
+name: Free disk space
+description: >-
+  Deletes preinstalled toolchains and Docker images the operator build never
+  touches, and reports what is left on the root filesystem.
+
+runs:
+  using: composite
+  steps:
+    - name: Free disk space
+      shell: bash
+      # The Bazel image builds no longer fit beside the preinstalled toolchains
+      # on a 14 GB runner disk. Best effort, since not every runner grants sudo.
+      # Run it before setup-go and setup-gcloud, or it deletes their installs
+      # along with the hosted tool cache.
+      run: |
+        echo "=== disk before cleanup ==="
+        df -h /
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache || :
+        sudo docker image prune --all --force || :
+        echo "=== disk after cleanup ==="
+        df -h /

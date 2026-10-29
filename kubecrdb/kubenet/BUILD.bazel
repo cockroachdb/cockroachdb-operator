@@ -1,0 +1,51 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "kubenet",
+    srcs = [
+        "db.go",
+        "options.go",
+        "tls.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/kubecrdb/kubenet",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//autoscaler",
+        "//crypto",
+        "//kube",
+        "//kube/kuberecord",
+        "//kubecrdb/crdbcerts",
+        "//manifests",
+        "//pgxsql",
+        "//pkg/backoff",
+        "//pkg/tracing",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/fields",
+        "@io_k8s_apimachinery//pkg/labels",
+        "@io_opentelemetry_go_otel//:otel",
+    ],
+)
+
+go_test(
+    name = "kubenet_test",
+    srcs = [
+        "db_internal_test.go",
+        "db_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":kubenet"],
+    deps = [
+        "//api/v1beta1",
+        "//crypto",
+        "//kube",
+        "//kube/kubetest",
+        "//manifests",
+        "//pkg/testutils",
+        "//testenv",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

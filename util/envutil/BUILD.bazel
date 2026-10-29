@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "envutil",
+    srcs = ["envutil.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/util/envutil",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/logging"],
+)
+
+go_test(
+    name = "envutil_test",
+    srcs = ["envutil_test.go"],
+    embed = [":envutil"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

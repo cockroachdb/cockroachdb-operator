@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "certs",
+    srcs = ["self_signed_certs.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/controllers/certs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//manifests",
+        "//pkg/logging",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+    ],
+)
+
+go_test(
+    name = "certs_test",
+    srcs = ["self_signed_certs_test.go"],
+    embed = [":certs"],
+    deps = [
+        "//api/v1beta1",
+        "//kube/kubetest",
+        "//manifests",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+    ],
+)

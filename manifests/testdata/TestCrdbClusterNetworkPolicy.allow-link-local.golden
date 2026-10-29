@@ -1,0 +1,33 @@
+[
+	{
+		"metadata": {
+			"name": "block-link-local-and-multicast",
+			"creationTimestamp": null
+		},
+		"spec": {
+			"podSelector": {
+				"matchLabels": {
+					"app": "cockroachdb"
+				}
+			},
+			"egress": [
+				{
+					"to": [
+						{
+							"ipBlock": {
+								"cidr": "0.0.0.0/0",
+								"except": [
+									"224.0.0.0/4"
+								]
+							}
+						}
+					]
+				}
+			],
+			"policyTypes": [
+				"Egress"
+			]
+		},
+		"status": {}
+	}
+]

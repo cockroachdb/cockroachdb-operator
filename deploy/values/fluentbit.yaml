@@ -1,0 +1,14 @@
+# This sets up TCP logging to a fluentd server running on 5170 on the same host.
+# This is assuming you've deployed the DaemonSet defined in
+# support/fluentbit.yaml. Logs will be written to stdout (in the DaemonSet pod)
+# as the sink.
+cluster:
+  loggingConf:
+    fluent-defaults:
+      format: json-fluent
+    sinks:
+      fluent-servers:
+        collector:
+          channels: [health, dev]
+          address: fluentbit.default.svc.cluster.local:5171
+          filter: INFO

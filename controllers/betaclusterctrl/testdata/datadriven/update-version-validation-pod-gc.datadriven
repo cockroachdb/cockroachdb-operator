@@ -1,0 +1,373 @@
+# Test that version validation self-heals when the job pod is garbage-collected
+# before the operator can read its logs. The operator should delete the stale
+# job and retry on the next reconcile rather than permanently blocking the
+# upgrade with a rejected-image annotation.
+
+# Set up a cluster on v24.1.0 with a known running version.
+create-cluster name=test-cluster image=cockroachdb/cockroach:v24.1.0
+----
+CrdbCluster/test-cluster
+	Current Revision:  "3991e10c92c10055"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+set-cluster-current-version name=test-cluster image=cockroachdb/cockroach:v24.1.0 version=v24.1.0
+----
+CrdbCluster/test-cluster
+	Current Revision:  "3991e10c92c10055"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Trigger upgrade to v24.2.0.
+set-cluster-image name=test-cluster image=cockroachdb/cockroach:v24.2.0
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Create version checker job and mark it as succeeded.
+create-version-checker-job name=test-cluster
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+set-version-checker-job-state name=test-cluster state=success
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Simulate pod garbage collection before logs can be read.
+set-log-reader-error enabled=true
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Reconcile with pod gone. The operator should detect the stale job, delete it,
+# and return ValidationPending instead of ValidationFailed. No rejected-image
+# annotation should be stamped.
+reconcile-cluster name=test-cluster
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+	Validation Status: Starting
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Restore log reader and create a fresh job. This simulates the next reconcile
+# after the stale job was cleaned up.
+set-log-reader-error enabled=false
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+	Validation Status: Starting
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+create-version-checker-job name=test-cluster
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+	Validation Status: Starting
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+set-version-checker-job-state name=test-cluster state=success
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+	Validation Status: Starting
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# This reconcile should succeed: fresh job, logs available, validation passes,
+# and the rolling update begins.
+reconcile-cluster name=test-cluster
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+	Validation Status: Finished
+	Upgrade Status:    Starting
+CrdbNode/test-cluster-0
+	Desired Revision: "4dd320ecdbc7a8d8"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC

@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "log",
+    srcs = ["log.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/manifests/log",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/cockroach/logconfig",
+        "//pkg/cockroach/logpb",
+        "//pkg/constants",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_cockroachlabs_version//:version",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+        "@io_k8s_api//core/v1:core",
+    ],
+)
+
+go_test(
+    name = "log_test",
+    srcs = ["log_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":log"],
+    deps = [
+        "//pkg/cockroach/logconfig",
+        "//pkg/testutils",
+        "@com_github_cockroachlabs_version//:version",
+        "@com_github_stretchr_testify//require",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)

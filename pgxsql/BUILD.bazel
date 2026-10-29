@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pgxsql",
+    srcs = [
+        "db.go",
+        "options.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pgxsql",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_jackc_pgx_v4//:pgx",
+        "@com_github_jackc_pgx_v4//stdlib",
+        "@org_uber_go_zap//:zap",
+    ],
+)
+
+go_test(
+    name = "pgxsql_test",
+    srcs = ["db_test.go"],
+    embed = [":pgxsql"],
+    deps = [
+        "//pkg/logging",
+        "@com_github_jackc_pgx_v4//:pgx",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+        "@org_uber_go_zap//zaptest",
+    ],
+)

@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "k8snodectrl",
+    srcs = ["reconciler.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/controllers/k8snodectrl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//controllers",
+        "//kube",
+        "//kube/kubeerrors",
+        "//kubecrdb/kubecrdbnode",
+        "//pkg/logging",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/fields",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/builder",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/event",
+        "@io_k8s_sigs_controller_runtime//pkg/predicate",
+    ],
+)
+
+go_test(
+    name = "k8snodectrl_test",
+    srcs = ["reconciler_test.go"],
+    embed = [":k8snodectrl"],
+    deps = [
+        "//api/v1beta1",
+        "//kube",
+        "//kube/kubetest",
+        "//kubecrdb/kubecrdbnode",
+        "//kubecrdb/kubecrdbnode/nodemock:mocks",
+        "@com_github_golang_mock//gomock",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/client/fake",
+    ],
+)

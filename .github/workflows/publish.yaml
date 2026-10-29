@@ -1,0 +1,66 @@
+name: Publish Docker Image
+on:
+  push:
+    branches:
+    - main
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    # id-token: write is also required for the setup-private-go-modules action
+    # below, which authenticates to GCP via Workload Identity Federation.
+    # Composite actions cannot request their own permissions, so the caller
+    # must grant it.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: ./.github/actions/free-disk-space
+
+    # `bazel run :push_production` builds the operator image, which transitively
+    # depends on the private github.com/cockroachlabs/version module. Bazel's
+    # go_repository falls back to `git ls-remote` for modules not on the public
+    # proxy, so we need authenticated git access. This action assumes the shared
+    # go-deps service account, mints an installation token for the listed repos,
+    # and configures a git insteadOf rewrite. It must run before the GCR auth
+    # step below, because its internal WIF login would otherwise overwrite the
+    # publish service account credentials that the push to us-docker.pkg.dev
+    # relies on via the gcloud credential helper.
+    - uses: cockroachdb/actions/setup-private-go-modules@v0
+      with:
+        repositories: cockroachlabs/version
+
+    - uses: 'google-github-actions/auth@v2'
+      id: auth
+      with:
+        token_format: access_token
+        project_id: 'cockroach-cloud-images'
+        workload_identity_provider: 'projects/466278589651/locations/global/workloadIdentityPools/github-cockroach-operator/providers/github-cockroach-operator'
+        service_account: github-cockroach-operator@cockroach-cloud-images.iam.gserviceaccount.com
+
+    - name: Login to GCR
+      uses: docker/login-action@v3
+      with:
+        registry: gcr.io
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
+
+    - name: Set up gcloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configure docker CLI
+      run: gcloud auth configure-docker us-docker.pkg.dev
+
+    - uses: bazel-contrib/setup-bazel@0.14.0
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+
+    - name: Build and push image
+      run: bazel run :push_production --stamp
+
+    - uses: ./.github/actions/trim-bazel-cache
+      if: always()

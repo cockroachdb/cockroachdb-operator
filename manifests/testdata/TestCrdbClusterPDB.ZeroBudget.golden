@@ -1,0 +1,24 @@
+{
+	"metadata": {
+		"name": "test-cluster-pdb",
+		"creationTimestamp": null,
+		"labels": {
+			"crdb.cockroachlabs.com/cluster": "test-cluster"
+		}
+	},
+	"spec": {
+		"minAvailable": 3,
+		"selector": {
+			"matchLabels": {
+				"app": "cockroachdb",
+				"crdb.cockroachlabs.com/cluster": "test-cluster"
+			}
+		}
+	},
+	"status": {
+		"disruptionsAllowed": 0,
+		"currentHealthy": 0,
+		"desiredHealthy": 0,
+		"expectedPods": 0
+	}
+}

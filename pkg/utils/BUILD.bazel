@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "utils",
+    srcs = [
+        "internal.go",
+        "namespace.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/utils",
+    visibility = ["//visibility:public"],
+)

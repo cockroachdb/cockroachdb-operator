@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "migrationutil",
+    srcs = [
+        "constants.go",
+        "sts_parser.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/migrationutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+    ],
+)
+
+go_test(
+    name = "migrationutil_test",
+    srcs = ["sts_parser_test.go"],
+    deps = [
+        ":migrationutil",
+        "//api/v1beta1",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

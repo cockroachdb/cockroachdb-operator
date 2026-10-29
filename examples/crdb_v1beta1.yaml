@@ -1,0 +1,12 @@
+apiVersion: crdb.cockroachlabs.com/v1beta1
+kind: CrdbCluster
+metadata:
+  name: cockroachdb
+  namespace: us-central1
+spec:
+  image: us.gcr.io/cockroach-cloud-images/cockroach:v25.4.0
+  regions:
+    - code: us-central1
+      nodes: 3
+  dataStore: {}
+  tlsEnabled: true

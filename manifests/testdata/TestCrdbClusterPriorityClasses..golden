@@ -1,0 +1,18 @@
+[
+	{
+		"metadata": {
+			"name": "crdb-critical",
+			"creationTimestamp": null
+		},
+		"value": 500000000,
+		"description": "CRDB critical priority pods"
+	},
+	{
+		"metadata": {
+			"name": "crdb-high",
+			"creationTimestamp": null
+		},
+		"value": 400000000,
+		"description": "CRDB high priority pods"
+	}
+]

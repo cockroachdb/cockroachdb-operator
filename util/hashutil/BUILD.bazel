@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "hashutil",
+    srcs = ["fnv.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/util/hashutil",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_cockroachdb_errors//:errors"],
+)
+
+go_test(
+    name = "hashutil_test",
+    srcs = ["fnv_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        ":hashutil",
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//require",
+    ],
+)

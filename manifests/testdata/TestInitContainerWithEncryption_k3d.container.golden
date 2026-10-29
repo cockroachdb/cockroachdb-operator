@@ -1,0 +1,56 @@
+{
+	"name": "init-container",
+	"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/init-container:f21cb0727676a48d0000bc3f32108ce59d51c3e7",
+	"command": [
+		"init-container",
+		"-locality-dest",
+		"/etc/cockroach-env",
+		"-locality-prefix",
+		"k3d-",
+		"-use-new-store-key"
+	],
+	"env": [
+		{
+			"name": "KUBERNETES_NODE",
+			"valueFrom": {
+				"fieldRef": {
+					"fieldPath": "spec.nodeName"
+				}
+			}
+		},
+		{
+			"name": "STORE_KEY",
+			"valueFrom": {
+				"secretKeyRef": {
+					"name": "new-secret-key",
+					"key": "StoreKeyData"
+				}
+			}
+		}
+	],
+	"resources": {},
+	"volumeMounts": [
+		{
+			"name": "cockroach-env",
+			"mountPath": "/etc/cockroach-env"
+		},
+		{
+			"name": "cockroach-key",
+			"mountPath": "/etc/cockroach-key"
+		},
+		{
+			"name": "datadir",
+			"mountPath": "/cockroach/cockroach-data"
+		}
+	],
+	"securityContext": {
+		"capabilities": {
+			"drop": [
+				"ALL"
+			]
+		},
+		"privileged": false,
+		"readOnlyRootFilesystem": true,
+		"allowPrivilegeEscalation": false
+	}
+}

@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "safesql",
+    srcs = ["safesql.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/safesql",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_lib_pq//:pq"],
+)

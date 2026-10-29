@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kubeconfig",
+    srcs = [
+        "fake_support.go",
+        "rest_config.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/kube/kubeconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//kube",
+        "//kube/kubetest",
+        "//pkg/tracing",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_client_go//rest",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

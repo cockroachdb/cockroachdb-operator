@@ -1,0 +1,200 @@
+# Test that under-replicated ranges hold off a rolling restart. When the cluster
+# has under-replicated ranges, the operator pauses the rollout so it doesn't take
+# down another node and push those ranges to unavailable. Once the ranges clear,
+# the rollout proceeds one node at a time.
+
+create-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Change the image so a rolling update is pending.
+set-cluster-image name=crdb image=cockroachdb/cockroach:v24.1.1
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Report under-replicated ranges. The next reconcile must not advance any node to
+# the new revision, and repeating it must be a no-op.
+set-under-replicated count=5
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+reconcile-cluster name=crdb repeat=2
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Ranges recover. The rollout now advances the first node to the new revision.
+set-under-replicated count=0
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+reconcile-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "3e74844d6d3e70ae"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC

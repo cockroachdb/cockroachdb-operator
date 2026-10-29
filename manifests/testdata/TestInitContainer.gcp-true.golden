@@ -1,0 +1,36 @@
+{
+	"name": "init-container",
+	"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/init-container:f21cb0727676a48d0000bc3f32108ce59d51c3e7",
+	"command": [
+		"init-container",
+		"-locality-dest",
+		"/etc/cockroach-env"
+	],
+	"env": [
+		{
+			"name": "KUBERNETES_NODE",
+			"valueFrom": {
+				"fieldRef": {
+					"fieldPath": "spec.nodeName"
+				}
+			}
+		}
+	],
+	"resources": {},
+	"volumeMounts": [
+		{
+			"name": "cockroach-env",
+			"mountPath": "/etc/cockroach-env"
+		}
+	],
+	"securityContext": {
+		"capabilities": {
+			"drop": [
+				"ALL"
+			]
+		},
+		"privileged": false,
+		"readOnlyRootFilesystem": true,
+		"allowPrivilegeEscalation": false
+	}
+}

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "values",
+    srcs = [
+        "cloud_provider.go",
+        "cmek.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/values",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/constants"],
+)

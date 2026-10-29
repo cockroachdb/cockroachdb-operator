@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "logging",
+    srcs = [
+        "logging.go",
+        "otel.go",
+        "tracing.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/logging",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/datadog/otelcompat",
+        "@com_github_go_logr_zapr//:zapr",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_opentelemetry_go_otel_trace//:trace",
+        "@org_golang_x_term//:term",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+go_test(
+    name = "logging_test",
+    srcs = ["logging_test.go"],
+    embed = [":logging"],
+    deps = [
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zaptest",
+    ],
+)

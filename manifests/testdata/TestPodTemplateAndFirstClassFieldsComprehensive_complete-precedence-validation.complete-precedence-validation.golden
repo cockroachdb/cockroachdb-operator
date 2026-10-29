@@ -1,0 +1,261 @@
+{
+  "metadata": {
+    "name": "precedence-test",
+    "namespace": "test-ns",
+    "creationTimestamp": null,
+    "labels": {
+      "app": "cockroachdb",
+      "cluster": "test-cluster",
+      "crdb.cockroachlabs.com/cluster": "",
+      "crdb.cockroachlabs.com/podName": "precedence-test",
+      "podtemplate-label": "podtemplate-value",
+      "shared-selector": "from-podtemplate",
+      "svc": "cockroachdb"
+    },
+    "annotations": {
+      "crdb.cockroachlabs.com/nodeGeneration": "0",
+      "crdb.cockroachlabs.com/nodeRevision": "fbed32879b414652",
+      "podtemplate-annotation": "podtemplate-value"
+    }
+  },
+  "spec": {
+    "volumes": [
+      {
+        "name": "datadir",
+        "persistentVolumeClaim": {
+          "claimName": "test-pvc-precedence-test"
+        }
+      },
+      {
+        "name": "cockroach-env",
+        "emptyDir": {}
+      },
+      {
+        "name": "certs",
+        "emptyDir": {}
+      },
+      {
+        "name": "podtemplate-volume",
+        "emptyDir": {}
+      }
+    ],
+    "initContainers": [
+      {
+        "name": "cockroachdb-init",
+        "image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/init-container:1b34da213707c4a89c7e794a19fbbfef5a1affe8",
+        "command": [
+          "init-container",
+          "-locality-dest",
+          "/etc/cockroach-env"
+        ],
+        "env": [
+          {
+            "name": "KUBERNETES_NODE",
+            "valueFrom": {
+              "fieldRef": {
+                "fieldPath": "spec.nodeName"
+              }
+            }
+          },
+          {
+            "name": "PUSHGATEWAY_NAMESPACE",
+            "value": "monitoring-test-ns"
+          },
+          {
+            "name": "ERROR_ON_MISSING_LABELS",
+            "value": "1"
+          }
+        ],
+        "resources": {},
+        "volumeMounts": [
+          {
+            "name": "cockroach-env",
+            "mountPath": "/etc/cockroach-env"
+          }
+        ]
+      }
+    ],
+    "containers": [
+      {
+        "name": "cockroachdb",
+        "image": "podtemplate-image:v2.0.0",
+        "command": [
+          "/bin/bash",
+          "-exc",
+          "ulimit -S -n 1048576;  exec /cockroach/cockroach start --advertise-addr=precedence-test..test-ns.svc.cluster.local:26258 --advertise-sql-addr=precedence-test..test-ns.svc.cluster.local:26257 --cache=startflags-cache-value --certs-dir=/cockroach/cockroach-certs --http-addr=0.0.0.0:9090 --join --listen-addr=0.0.0.0:9999 --locality=dns=precedence-test..test-ns.svc.cluster.local --log='sinks: {stderr: {channels: {INFO: \"HEALTH,OPS\", WARNING: \"STORAGE,DEV\"}}}' --sql-addr=0.0.0.0:26257 --startflags-only=startflags-value"
+        ],
+        "ports": [
+          {
+            "name": "grpc",
+            "containerPort": 26258,
+            "protocol": "TCP"
+          },
+          {
+            "name": "http",
+            "containerPort": 8080,
+            "protocol": "TCP"
+          },
+          {
+            "name": "sql",
+            "containerPort": 26257,
+            "protocol": "TCP"
+          }
+        ],
+        "env": [
+          {
+            "name": "COCKROACH_CERTS_DIR",
+            "value": "/cockroach/cockroach-certs"
+          },
+          {
+            "name": "COCKROACH_HOST",
+            "value": "localhost:26257"
+          },
+          {
+            "name": "COCKROACH_RPC_PORT",
+            "value": "26258"
+          },
+          {
+            "name": "COCKROACH_SQL_PORT",
+            "value": "26257"
+          },
+          {
+            "name": "HOST_IP",
+            "valueFrom": {
+              "fieldRef": {
+                "apiVersion": "v1",
+                "fieldPath": "status.hostIP"
+              }
+            }
+          },
+          {
+            "name": "DEPRECATED_ENV",
+            "value": "deprecated-value"
+          },
+          {
+            "name": "SHARED_ENV",
+            "value": "from-podtemplate"
+          },
+          {
+            "name": "PODTEMPLATE_ENV",
+            "value": "podtemplate-value"
+          }
+        ],
+        "resources": {
+          "limits": {
+            "memory": "0"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "2Gi"
+          }
+        },
+        "volumeMounts": [
+          {
+            "name": "certs",
+            "readOnly": true,
+            "mountPath": "/cockroach/cockroach-certs"
+          },
+          {
+            "name": "cockroach-env",
+            "readOnly": true,
+            "mountPath": "/etc/cockroach-env"
+          },
+          {
+            "name": "datadir",
+            "mountPath": "/cockroach/cockroach-data"
+          }
+        ],
+        "readinessProbe": {
+          "httpGet": {
+            "path": "/health?ready=1",
+            "port": "http",
+            "scheme": "HTTPS"
+          },
+          "initialDelaySeconds": 10,
+          "timeoutSeconds": 10,
+          "periodSeconds": 10,
+          "successThreshold": 1,
+          "failureThreshold": 2
+        },
+        "securityContext": {
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": false
+        }
+      },
+      {
+        "name": "cert-reloader",
+        "image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/inotifywait:87edf086db32734c7fa083a62d1055d664900840",
+        "args": [
+          "cockroach",
+          "/cockroach/cockroach-certs"
+        ],
+        "resources": {},
+        "volumeMounts": [
+          {
+            "name": "certs",
+            "readOnly": true,
+            "mountPath": "/cockroach/cockroach-certs"
+          }
+        ],
+        "imagePullPolicy": "IfNotPresent",
+        "securityContext": {
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": false
+        }
+      },
+      {
+        "name": "podtemplate-sidecar",
+        "image": "sidecar:latest",
+        "resources": {}
+      }
+    ],
+    "terminationGracePeriodSeconds": 2700,
+    "nodeSelector": {
+      "deprecated-selector": "deprecated-value",
+      "podtemplate-selector": "podtemplate-value",
+      "shared-selector": "from-podtemplate"
+    },
+    "serviceAccountName": "podtemplate-sa",
+    "shareProcessNamespace": true,
+    "securityContext": {
+      "runAsUser": 1000,
+      "runAsGroup": 1000,
+      "runAsNonRoot": false,
+      "fsGroup": 1000,
+      "fsGroupChangePolicy": "OnRootMismatch"
+    },
+    "hostname": "precedence-test",
+    "affinity": {
+      "podAntiAffinity": {
+        "requiredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "labelSelector": {
+              "matchLabels": {
+                "app": "cockroachdb",
+                "crdb.cockroachlabs.com/cluster": ""
+              }
+            },
+            "namespaces": [
+              "test-ns"
+            ],
+            "topologyKey": "kubernetes.io/hostname"
+          }
+        ]
+      }
+    },
+    "priorityClassName": "crdb-critical"
+  },
+  "status": {}
+}

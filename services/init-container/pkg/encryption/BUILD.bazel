@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "encryption",
+    srcs = [
+        "encryption.go",
+        "kms_client.go",
+        "metrics.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/services/init-container/pkg/encryption",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//services/init-container/pkg/aws",
+        "@com_github_aws_aws_sdk_go//aws",
+        "@com_github_aws_aws_sdk_go//aws/credentials",
+        "@com_github_aws_aws_sdk_go//aws/session",
+        "@com_github_aws_aws_sdk_go//service/kms",
+        "@com_github_azure_azure_sdk_for_go_sdk_azidentity//:azidentity",
+        "@com_github_azure_azure_sdk_for_go_sdk_security_keyvault_azkeys//:azkeys",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_gofrs_uuid//:uuid",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_prometheus_client_golang//prometheus/push",
+        "@com_google_cloud_go_kms//apiv1",
+        "@com_google_cloud_go_kms//apiv1/kmspb",
+        "@org_golang_google_api//impersonate",
+        "@org_golang_google_api//option",
+        "@org_golang_google_protobuf//types/known/wrapperspb",
+    ],
+)
+
+go_test(
+    name = "encryption_test",
+    srcs = [
+        "encryption_test.go",
+        "kms_client_test.go",
+    ],
+    embed = [":encryption"],
+    deps = [
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/testutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testmanifest",
+    srcs = [
+        "factory.go",
+        "tenant.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/testmanifest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//manifests",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/labels",
+    ],
+)

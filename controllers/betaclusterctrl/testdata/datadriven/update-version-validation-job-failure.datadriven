@@ -1,0 +1,201 @@
+# Test version validation logic during cluster upgrades
+# This test verifies that the version validation logic works correctly
+# when upgrading a cluster to a new image version.
+
+# Create a test cluster with initial image
+create-cluster name=test-cluster image=cockroachdb/cockroach:v24.1.0
+----
+CrdbCluster/test-cluster
+	Current Revision:  "3991e10c92c10055"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Set current version to simulate existing deployment
+set-cluster-current-version name=test-cluster image=cockroachdb/cockroach:v24.1.0 version=v24.1.0
+----
+CrdbCluster/test-cluster
+	Current Revision:  "3991e10c92c10055"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Change cluster image to trigger validation
+set-cluster-image name=test-cluster image=cockroachdb/cockroach:v24.2.0
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+
+# Create a version checker job
+create-version-checker-job name=test-cluster
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+set-version-checker-job-state name=test-cluster state=failure
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+reconcile-cluster name=test-cluster
+----
+CrdbCluster/test-cluster
+	Current Revision:  "4dd320ecdbc7a8d8"
+	Previous Revision: "3991e10c92c10055"
+	Spec Image:        "cockroachdb/cockroach:v24.2.0"
+	Current Version:   "v24.1.0"
+	Validation Status: Failed
+CrdbNode/test-cluster-0
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-1
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/test-cluster-2
+	Desired Revision: "3991e10c92c10055"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC

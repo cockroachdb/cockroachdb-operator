@@ -1,0 +1,24 @@
+# permissions for end users to edit crdbtenants.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crdbtenant-editor-role
+rules:
+- apiGroups:
+  - crdb.cockroachlabs.com
+  resources:
+  - crdbtenants
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crdb.cockroachlabs.com
+  resources:
+  - crdbtenants/status
+  verbs:
+  - get

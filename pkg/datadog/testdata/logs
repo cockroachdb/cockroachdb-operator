@@ -1,0 +1,48 @@
+# Test uploading a single log entry
+upload-logs
+test log line 1
+----
+[
+  {
+    "ddsource": "",
+    "ddtags": "",
+    "hostname": "test-host",
+    "message": "test log line 1",
+    "service": "test-service"
+  }
+]
+Content-Encoding: gzip
+Content-Type: application/json
+
+# Test uploading a multi log entry
+upload-logs
+test log line 1
+test log line 2
+----
+[
+  {
+    "ddsource": "",
+    "ddtags": "",
+    "hostname": "test-host",
+    "message": "test log line 1\ntest log line 2",
+    "service": "test-service"
+  }
+]
+Content-Encoding: gzip
+Content-Type: application/json
+
+# Test uploading a empty log entry
+upload-logs
+
+----
+[
+  {
+    "ddsource": "",
+    "ddtags": "",
+    "hostname": "test-host",
+    "message": "",
+    "service": "test-service"
+  }
+]
+Content-Encoding: gzip
+Content-Type: application/json

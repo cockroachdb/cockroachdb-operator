@@ -1,0 +1,43 @@
+---
+apiVersion: crdb.cockroachlabs.com/v1beta1
+kind: CrdbCluster
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cluster.labels" . | nindent 4 }}
+spec:
+  {{- with .Values.clusterSettings }}
+  clusterSettings: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.postInitSQL }}
+  postInitSQL: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.regions }}
+  regions: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  features:
+    - reconcile
+    - reconcile-beta
+  template:
+    spec:
+      image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+      certificates:
+        externalCertificates:
+          clientCaConfigMapName: {{ .Release.Name }}-client-ca
+          nodeCaConfigMapName: {{ .Release.Name }}-node-ca
+          httpSecretName: {{ .Release.Name }}-ui-certs
+          nodeClientSecretName: {{ .Release.Name }}-node-client-certs
+          nodeSecretName: {{ .Release.Name }}-node-certs
+          rootSqlClientSecretName: {{ .Release.Name }}-client-certs
+    {{- with .Values.resources }}
+      resourceRequirements: {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ default .Release.Name .Values.rbac.serviceAccountName }}
+    {{- if .Values.loggingConf }}
+      loggingConfigMapName: {{ .Release.Name }}-logging
+    {{- end }}
+  # All properties below are solely to pass validation. They aren't used by the
+  # betaclusterctrl controller so the values don't matter so long as they're
+  # valid.
+  dataStore: {}

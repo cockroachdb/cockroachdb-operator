@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "manifests",
+    srcs = ["coredns.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/kube/manifests",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//pkg/values",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//rbac/v1:rbac",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/util/intstr",
+    ],
+)

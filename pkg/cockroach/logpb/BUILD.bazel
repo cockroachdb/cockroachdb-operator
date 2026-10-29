@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# NB: All the keep directives are holding this file in place as it was largely
+# written by hand. Gazelle sees this package as being empty because we have
+# manual rules to create log.pb.go.
+
+go_library(
+    name = "logpb",
+    srcs = [
+        "doc.go",
+        "serverity.go",
+    ],
+    embed = [":logpb_go_proto"],  # keep
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/cockroach/logpb",
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "logpb_proto",
+    srcs = ["log.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_gogo_protobuf//gogoproto:gogoproto_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)  # keep
+
+go_proto_library(
+    name = "logpb_go_proto",
+    compilers = [
+        "@io_bazel_rules_go//proto:gogofaster_grpc",
+    ],  # keep
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/cockroach/logpb",
+    proto = ":logpb_proto",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_gogo_protobuf//gogoproto"],
+)  # keep

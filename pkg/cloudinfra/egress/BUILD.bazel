@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "egress",
+    srcs = ["egress_rules_service.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/cloudinfra/egress",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//manifests",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+    ],
+)

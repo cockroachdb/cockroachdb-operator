@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "backoff",
+    srcs = ["backoff.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/backoff",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/logging",
+        "@com_github_cenkalti_backoff_v4//:backoff",
+    ],
+)

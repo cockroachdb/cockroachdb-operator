@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "evictionutil",
+    srcs = ["eviction_helper.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/util/evictionutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//pkg/logging",
+        "//pkg/utils/timeutils",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/types",
+    ],
+)
+
+go_test(
+    name = "evictionutil_test",
+    srcs = ["eviction_helper_test.go"],
+    embed = [":evictionutil"],
+    deps = [
+        "//api/v1beta1",
+        "//pkg/utils/timeutils",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

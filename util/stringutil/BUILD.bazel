@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "stringutil",
+    srcs = ["stringset.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/util/stringutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "stringutil_test",
+    srcs = ["stringset_test.go"],
+    embed = [":stringutil"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

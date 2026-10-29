@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "locality",
+    srcs = ["locality.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/services/init-container/pkg/locality",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+    ],
+)
+
+go_test(
+    name = "locality_test",
+    srcs = ["locality_test.go"],
+    embed = [":locality"],
+    deps = [
+        "//kube",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes/fake",
+    ],
+)

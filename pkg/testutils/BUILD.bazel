@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutils",
+    srcs = [
+        "doc.go",
+        "golden.go",
+        "hook.go",
+        "integration_off.go",
+        "leaktest.go",
+        "require.go",
+        "skip.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/testutils",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube/kuberecord",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/testutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@org_uber_go_goleak//:goleak",
+    ],
+)

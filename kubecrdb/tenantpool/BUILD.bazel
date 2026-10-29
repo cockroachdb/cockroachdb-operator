@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tenantpool",
+    srcs = ["cache.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/kubecrdb/tenantpool",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//kube",
+        "//util/timeutil",
+        "@com_github_cockroachdb_errors//:errors",
+    ],
+)
+
+go_test(
+    name = "tenantpool_test",
+    srcs = ["cache_test.go"],
+    deps = [
+        ":tenantpool",
+        "//api/v1beta1",
+        "//kube",
+        "//kube/kubetest",
+        "//util/timeutil",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

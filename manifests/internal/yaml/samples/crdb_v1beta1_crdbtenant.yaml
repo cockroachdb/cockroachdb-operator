@@ -1,0 +1,8 @@
+apiVersion: crdb.cockroachlabs.com/v1beta1
+kind: CrdbTenant
+metadata:
+  name: my-tenant
+spec:
+  # Add fields here
+  tenantID: 10
+  pods: 1

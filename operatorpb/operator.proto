@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package operator;
+option go_package = "github.com/cockroachlabs/cockroach-enterprise-operator/operatorpb";
+
+// ResourceID uniquely identifies a kubernetes resource.
+message ResourceID {
+    // The name of the resource. This matches the name that is used to retrieve
+    // the resource from the API server.
+    //
+    // Example: "tenant-1337"
+    string name = 1;
+
+    // The namespace the resource is in.
+    // Example: "us-central1"
+    string namespace = 2;
+}
+
+message ScaleTenantRequest {
+    // The tenant to scale. The name and namespace of the tenant are required.
+    ResourceID tenant = 1;
+}
+
+message ScaleTenantResponse {
+}
+
+service Operator {
+    // ScaleTenant will scale the tenant from 0 to 1 pods. If the tenant already
+    // has a pod, ScaleTenant is a no-op.
+    rpc ScaleTenant(ScaleTenantRequest) returns (ScaleTenantResponse) {}
+}

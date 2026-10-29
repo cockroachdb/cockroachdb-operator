@@ -1,0 +1,48 @@
+{
+	"apiVersion": "cilium.io/v2",
+	"kind": "CiliumClusterwideNetworkPolicy",
+	"metadata": {
+		"labels": {
+			"tenant-id": "0"
+		},
+		"name": "tenant-0"
+	},
+	"spec": {
+		"egress": [
+			{
+				"toEndpoints": [
+					{
+						"matchLabels": {
+							"tenant-id": "0"
+						}
+					}
+				]
+			}
+		],
+		"endpointSelector": {
+			"matchLabels": {
+				"tenant-id": "0"
+			}
+		},
+		"ingress": [
+			{
+				"fromEndpoints": [
+					{
+						"matchLabels": {
+							"tenant-id": "0"
+						}
+					}
+				]
+			},
+			{
+				"fromEndpoints": [
+					{
+						"matchLabels": {
+							"name": "tailscale"
+						}
+					}
+				]
+			}
+		]
+	}
+}

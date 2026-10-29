@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fake",
+    srcs = ["vmpoolgroup.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/infrastructure/fake",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/infrastructure"],
+)

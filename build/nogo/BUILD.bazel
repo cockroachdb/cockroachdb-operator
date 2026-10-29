@@ -1,0 +1,51 @@
+load("@com_github_sluongng_nogo_analyzer//:def.bzl", "nogo_config")
+load("@com_github_sluongng_nogo_analyzer//staticcheck:def.bzl", "staticcheck_analyzers")
+load("@io_bazel_rules_go//go:def.bzl", "nogo")
+load(":analyzers.bzl", "FIRSTPARTY_ANALYZERS", "GOVET_ANALYZERS", "STATICHECK_ANALYZERS", "firstparty_analyzers", "govet_analyzers")
+
+nogo(
+    name = "cc_nogo",
+    config = ":nogo_config.json",
+    visibility = ["//visibility:public"],
+    deps =
+        firstparty_analyzers(FIRSTPARTY_ANALYZERS) +
+        govet_analyzers(GOVET_ANALYZERS) +
+        staticcheck_analyzers(STATICHECK_ANALYZERS),
+)
+
+# nogo_config is a helper to generate a nogo configuration json file.
+# TODO: As of go_rules 0.27.0, we can define a "_base" configuration in nogo
+# that all other configurations will inherit from. The upgrade is a bit bumpy
+# so we're sticking with
+nogo_config(
+    name = "config",
+    out = "nogo_config.json",
+    analyzers = FIRSTPARTY_ANALYZERS + STATICHECK_ANALYZERS + GOVET_ANALYZERS,
+    default = {
+        "exclude_files": {
+            ".*/mocks_test\\.go$": "ignore generated mock tests",
+            ".*\\.pb\\.go$": "ignore generated code",
+            "migration/internal/mssql/internal/parser/tsql_parser.go$": "ignore (probably) generated code",
+            "migration/internal/mysql/internal/parser/mysql_parser.go$": "ignore (probably) generated code",
+            "migration/internal/oracle/internal/parser/plsql_parser.go$": "ignore (probably) generated code",
+            "operators/cockroach-operator/kubecrdb/kubenet/dbconsole_gen.go$": "ignore generated code",
+            "external/.*$": "ignore 3rd-party code",
+        },
+    },
+    override = {
+        "sqlsafe": {
+            "exclude_files": {
+                ".*_test.go$": "ignore test files for sqlsafe",
+                "e2e-backend/.*": "ignore test files for sqlsafe",
+                "pkg/utils/errors.go$": "false positive",
+                "pkg/utils/treeprinter/.*$": "false positives",
+                ".*\\.pb\\.go$": "ignore generated code",
+                "migration/internal/mssql/internal/parser/tsql_parser.go$": "ignore (probably) generated code",
+                "migration/internal/mysql/internal/parser/mysql_parser.go$": "ignore (probably) generated code",
+                "migration/internal/oracle/internal/parser/plsql_parser.go$": "ignore (probably) generated code",
+                "operators/cockroach-operator/kubecrdb/kubenet/dbconsole_gen.go$": "ignore generated code",
+                "external/.*$": "ignore 3rd-party code",
+            },
+        },
+    },
+)

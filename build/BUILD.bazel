@@ -1,0 +1,6 @@
+# Configuration for switching to UBI-minimal base images
+# This allows enterprise deployments to use UBI while the default stays distroless
+config_setting(
+    name = "use_ubi",
+    define_values = {"use_ubi": "true"},
+)

@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "k8s",
+    srcs = ["k8svmpool.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/infrastructure/k8s",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//kube/kubeerrors",
+        "//pkg/infrastructure",
+        "//pkg/logging",
+        "@com_github_cenkalti_backoff//:backoff",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+    ],
+)

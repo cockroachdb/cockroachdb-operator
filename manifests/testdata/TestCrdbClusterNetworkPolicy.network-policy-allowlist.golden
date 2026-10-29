@@ -1,0 +1,76 @@
+[
+	{
+		"metadata": {
+			"name": "block-link-local-and-multicast",
+			"creationTimestamp": null
+		},
+		"spec": {
+			"podSelector": {
+				"matchLabels": {
+					"app": "cockroachdb"
+				}
+			},
+			"egress": [
+				{
+					"to": [
+						{
+							"ipBlock": {
+								"cidr": "0.0.0.0/0",
+								"except": [
+									"224.0.0.0/4"
+								]
+							}
+						}
+					]
+				}
+			],
+			"policyTypes": [
+				"Egress"
+			]
+		},
+		"status": {}
+	},
+	{
+		"metadata": {
+			"name": "cockroachdb-internal-ingress",
+			"creationTimestamp": null
+		},
+		"spec": {
+			"podSelector": {
+				"matchLabels": {
+					"app": "cockroachdb"
+				}
+			},
+			"ingress": [
+				{
+					"from": [
+						{
+							"ipBlock": {
+								"cidr": "10.0.0.0/8"
+							}
+						},
+						{
+							"ipBlock": {
+								"cidr": "172.16.0.0/12"
+							}
+						},
+						{
+							"ipBlock": {
+								"cidr": "192.168.0.0/16"
+							}
+						},
+						{
+							"ipBlock": {
+								"cidr": "9.9.9.9/32"
+							}
+						}
+					]
+				}
+			],
+			"policyTypes": [
+				"Ingress"
+			]
+		},
+		"status": {}
+	}
+]

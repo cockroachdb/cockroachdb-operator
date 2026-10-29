@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "constants",
+    srcs = [
+        "backup.go",
+        "centralized_logging.go",
+        "cmek.go",
+        "constants.go",
+        "insitu.go",
+        "private_endpoints.go",
+    ] + select({
+        "//build:use_ubi": ["images_ubi.go"],
+        "//conditions:default": ["images_distroless.go"],
+    }),
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/constants",
+    visibility = ["//visibility:public"],
+    x_defs = select({
+        "//build:use_ubi": {
+            "operatorVersion": "{STABLE_OPERATOR_VERSION}",
+        },
+        "//conditions:default": {},
+    }),
+    deps = ["@com_github_cockroachlabs_version//:version"],
+)

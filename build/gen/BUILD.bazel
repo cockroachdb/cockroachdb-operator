@@ -1,0 +1,20 @@
+load(":gen.bzl", "gen", "go_proto", "gomock")
+
+go_proto()
+
+gomock()
+
+gen(
+    name = "proto",
+    srcs = [
+        ":go_proto",
+    ],
+)
+
+gen(
+    name = "gen",
+    srcs = [
+        "proto",
+        ":gomock",
+    ],
+)

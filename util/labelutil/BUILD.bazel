@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "labelutil",
+    srcs = ["label.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/util/labelutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "gomock")
+
+go_library(
+    name = "mocks",
+    srcs = [":tenantmock"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/tenant/tenantmock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "@com_github_golang_mock//gomock",
+        "@io_k8s_api//core/v1:core",
+    ],
+)
+
+gomock(
+    name = "tenantmock",
+    out = "mocks_generated.go",
+    interfaces = ["TenantPodSyncer"],
+    library = "//tenant",
+    package = "tenantmock",
+    visibility = ["//visibility:public"],
+)
