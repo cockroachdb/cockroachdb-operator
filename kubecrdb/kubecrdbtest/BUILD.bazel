@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kubecrdbtest",
+    srcs = [
+        "cluster.go",
+        "crdb_mapper.go",
+        "node.go",
+        "options.go",
+        "test_certs.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/kubecrdb/kubecrdbtest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//crypto",
+        "//kube",
+        "//kubecrdb/crdbcerts",
+        "//manifests",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_api//rbac/v1:rbac",
+        "@io_k8s_apimachinery//pkg/api/meta",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+    ],
+)

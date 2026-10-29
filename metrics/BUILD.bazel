@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "metrics",
+    srcs = [
+        "metric_client.go",
+        "moving_avg.go",
+        "moving_max.go",
+        "node_manager.go",
+        "tenant_manager.go",
+        "test_node_manager.go",
+        "test_tenant_manager.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/metrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//kube",
+        "//pkg/logging",
+        "//util/timeutil",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_model//go",
+        "@com_github_prometheus_common//expfmt",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_metrics//pkg/apis/metrics/v1beta1",
+        "@io_k8s_metrics//pkg/client/clientset/versioned",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics",
+        "@org_uber_go_zap//:zap",
+    ],
+)
+
+go_test(
+    name = "metrics_test",
+    srcs = [
+        "metric_client_test.go",
+        "moving_avg_test.go",
+        "moving_max_test.go",
+        "node_manager_test.go",
+        "tenant_manager_test.go",
+    ],
+    embed = [":metrics"],
+    deps = [
+        "//api/v1beta1",
+        "//pkg/testutils",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

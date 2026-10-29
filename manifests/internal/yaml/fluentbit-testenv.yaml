@@ -1,0 +1,64 @@
+# fluentbit-testenv.yaml defines the logging sink resources that are required
+# for tests. Spinning up CRDB in host cluster or dedicated cluster environment
+# currently requires a logging sink due to this issue:
+# https://github.com/cockroachdb/cockroach/issues/67945. Once that issue is
+# resolved, these resources are not necessary.
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentbit
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+        - name: fluent-bit
+          imagePullPolicy: Always
+          image: fluent/fluent-bit:1.7.8
+          ports:
+          - containerPort: 5170
+            hostPort: 5170
+            protocol: TCP
+          - containerPort: 5171
+            hostPort: 5171
+            protocol: TCP
+          volumeMounts:
+            - name: fluentbit-config
+              mountPath: /fluent-bit/etc/
+      volumes:
+        - name: fluentbit-config
+          configMap:
+            name: fluentbit-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentbit-config
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Daemon       Off
+        Log_Level    info
+
+    # This port mimics the port for general logs on FluentBit.
+    [INPUT]
+        Name              tcp
+        Listen            0.0.0.0
+        Port              5170
+
+    # This port mimics the port for telemetry logs on FluentBit.
+    [INPUT]
+        Name              tcp
+        Listen            0.0.0.0
+        Port              5171
+
+    [OUTPUT]
+        Name              stdout
+        Match             *

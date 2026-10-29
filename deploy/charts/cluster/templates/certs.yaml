@@ -1,0 +1,65 @@
+{{- $clientCerts := splitList "\n" (include "cluster.clientCerts" .) -}}
+{{- $nodeCerts := splitList "\n" (include "cluster.nodeCerts" .) -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-client-ca
+  annotations:
+  {{- include "cluster.installOnlyAnnotations" . | nindent 4 }}
+data:
+  ca.crt: |
+  {{- index $clientCerts 0 | b64dec | nindent 4 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-client-certs
+  annotations:
+  {{- include "cluster.installOnlyAnnotations" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  {{ index $clientCerts 1 }}
+  {{ index $clientCerts 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-node-ca
+  annotations:
+  {{- include "cluster.installOnlyAnnotations" . | nindent 4 }}
+data:
+  ca.crt: |
+  {{- index $nodeCerts 0 | b64dec | nindent 4 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-node-certs
+  annotations:
+  {{- include "cluster.installOnlyAnnotations" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  {{ index $nodeCerts 1 }}
+  {{ index $nodeCerts 2 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-node-client-certs
+  annotations:
+  {{- include "cluster.installOnlyAnnotations" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  {{ index $clientCerts 3 }}
+  {{ index $clientCerts 4 }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-ui-certs
+  annotations:
+  {{- include "cluster.installOnlyAnnotations" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  {{- include "cluster.httpCerts" . | nindent 2 }}

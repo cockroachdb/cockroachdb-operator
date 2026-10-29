@@ -1,0 +1,73 @@
+# Configure the webhook service, which is used to validate CRDs and to handle
+# tenant resumption requests (which need to have very low latency responses).
+
+---
+# Define a mutating webhook for the operator.
+# This webhook provides sensible defaults for CRD fields.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: cockroach-mutating-webhook-config
+webhooks:
+  - name: mutating.cockroach-webhook.cockroachlabs.com
+    matchPolicy: Exact
+    rules:
+      - apiGroups:   ["crdb.cockroachlabs.com"]
+        apiVersions: ["v1beta1"]
+        operations:  ["CREATE", "UPDATE"]
+        resources:   ["crdbclusters"]
+        scope:       "*"
+    clientConfig:
+      service:
+        name: cockroach-webhook-service
+        namespace: default
+        path: "/mutate"
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    # Set this below the default timeout for calls to the K8s API so that
+    # attempts to call the webhook will fail before the client call times out.
+    timeoutSeconds: 20
+    failurePolicy: Fail
+
+---
+# Define a validating webhook for the operator.
+# For AWS, we need /v1.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: cockroach-webhook-config
+webhooks:
+  - name: cockroach-webhook.cockroachlabs.com
+    matchPolicy: Exact
+    rules:
+      - apiGroups:   ["crdb.cockroachlabs.com"]
+        apiVersions: ["v1beta1"]
+        operations:  ["*"]
+        resources:   ["*"]
+        scope:       "*"
+    clientConfig:
+      service:
+        name: cockroach-webhook-service
+        namespace: default
+        path: "/validate"
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    # Set this below the default timeout for calls to the K8s API so that
+    # attempts to call the webhook will fail before the client call times out.
+    timeoutSeconds: 20
+    failurePolicy: Fail
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cockroach-webhook-service
+  namespace: default
+  labels:
+    app: cockroach-operator
+spec:
+  ports:
+    - port: 443
+      targetPort: 9443
+  selector:
+    app: cockroach-operator

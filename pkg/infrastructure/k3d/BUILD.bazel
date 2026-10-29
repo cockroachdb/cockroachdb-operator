@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "k3d",
+    srcs = ["cluster.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/infrastructure/k3d",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//kube/kubeerrors",
+        "//manifests",
+        "//pkg/backoff",
+        "//pkg/constants",
+        "//pkg/infrastructure",
+        "//pkg/logging",
+        "//pkg/tracing",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_gofrs_uuid//:uuid",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_apimachinery//pkg/util/net",
+        "@io_k8s_apimachinery//pkg/util/wait",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_sigs_controller_runtime//pkg/client/config",
+    ],
+)

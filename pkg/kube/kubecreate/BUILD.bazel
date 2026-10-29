@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kubecreate",
+    srcs = ["coredns.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/kube/kubecreate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//manifests",
+        "//pkg/backoff",
+        "//pkg/kube/manifests",
+        "//pkg/logging",
+        "//pkg/values",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@org_golang_x_sync//errgroup",
+    ],
+)

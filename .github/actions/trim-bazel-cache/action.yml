@@ -1,0 +1,42 @@
+name: Trim Bazel disk cache
+description: >-
+  Caps the Bazel disk cache so the next run does not restore more than the
+  runner disk can hold.
+
+runs:
+  using: composite
+  steps:
+    - name: Trim Bazel disk cache
+      shell: bash
+      # setup-bazel points --disk_cache here and re-saves it in its post step, so
+      # it grows every run and the next restore costs that much disk before the
+      # build starts. Run this after the build, ahead of that post step.
+      run: |
+        set -euo pipefail
+
+        cache_dir="${HOME}/.cache/bazel-disk"
+        if [ ! -d "$cache_dir" ]; then
+          echo "no Bazel disk cache at $cache_dir"
+          exit 0
+        fi
+
+        max=$(( 6 * 1024 * 1024 * 1024 ))
+        size=$(du -sb "$cache_dir" | cut -f1)
+        echo "Bazel disk cache is $(( size / 1024 / 1024 )) MiB, cap is $(( max / 1024 / 1024 )) MiB"
+        if [ "$size" -le "$max" ]; then
+          exit 0
+        fi
+
+        # Evict oldest first. Entries are reproducible action outputs, so the
+        # only cost is a cache miss next run. Process substitution rather than a
+        # pipe, or breaking out early hands find a SIGPIPE that pipefail turns
+        # into a step failure.
+        while IFS=$'\t' read -r _ bytes path; do
+          if [ "$size" -le "$max" ]; then
+            break
+          fi
+          rm -f "$path" || continue
+          size=$(( size - bytes ))
+        done < <(find "$cache_dir" -type f -printf '%T@\t%s\t%p\n' | sort -n)
+
+        echo "Bazel disk cache trimmed to $(( size / 1024 / 1024 )) MiB"

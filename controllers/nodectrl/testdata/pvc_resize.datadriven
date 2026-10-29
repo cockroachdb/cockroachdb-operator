@@ -1,0 +1,55 @@
+# First reconcile of a new PVC does not wait.
+monitor-pvc-resize desired=10Gi existing=false
+----
+requeue=false
+requeue_after=0s
+
+# PVC provisioning is still pending, so resize monitoring does not apply.
+monitor-pvc-resize desired=10Gi phase=Pending spec=10Gi capacity=0Gi
+----
+requeue=false
+requeue_after=0s
+
+# API server has not accepted the requested size yet.
+monitor-pvc-resize desired=20Gi phase=Bound spec=10Gi capacity=10Gi
+----
+requeue=false
+requeue_after=5s
+
+# Block resize is still in progress.
+monitor-pvc-resize desired=20Gi phase=Bound spec=20Gi capacity=10Gi conditions=Resizing:true
+----
+requeue=false
+requeue_after=5s
+
+# Filesystem resize must not block before the pod exists. Kubelet needs a mounted
+# volume to finish filesystem expansion.
+monitor-pvc-resize desired=20Gi phase=Bound spec=20Gi capacity=20Gi conditions=FileSystemResizePending:true
+----
+requeue=false
+requeue_after=0s
+
+# Some environments report filesystem resize pending before capacity catches up.
+# This still must not block pod creation.
+monitor-pvc-resize desired=20Gi phase=Bound spec=20Gi capacity=10Gi conditions=FileSystemResizePending:true
+----
+requeue=false
+requeue_after=0s
+
+# Stale resize condition should not be treated as in-flight.
+monitor-pvc-resize desired=20Gi phase=Bound spec=20Gi capacity=10Gi conditions=Resizing:false
+----
+requeue=false
+requeue_after=0s
+
+# Capacity lag without a Resizing condition is treated as not blocking.
+monitor-pvc-resize desired=20Gi phase=Bound spec=20Gi capacity=10Gi
+----
+requeue=false
+requeue_after=0s
+
+# Steady state.
+monitor-pvc-resize desired=10Gi phase=Bound spec=10Gi capacity=10Gi
+----
+requeue=false
+requeue_after=0s

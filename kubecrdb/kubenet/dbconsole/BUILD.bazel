@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dbconsole",
+    srcs = [
+        "dbconsole.go",
+        "dbconsole_gen.go",
+        "util.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/kubecrdb/kubenet/dbconsole",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//kubecrdb/kubenet",
+        "//util/timeutil",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_gogo_protobuf//proto",
+    ],
+)
+
+go_test(
+    name = "dbconsole_test",
+    srcs = [
+        "dbconsole_test.go",
+        "util_test.go",
+    ],
+    embed = [":dbconsole"],
+    deps = [
+        "//api/v1beta1",
+        "//kube",
+        "//kubecrdb/kubenet",
+        "//pgxsql",
+        "//pkg/testutils",
+        "//testenv",
+        "@com_github_stretchr_testify//require",
+    ],
+)

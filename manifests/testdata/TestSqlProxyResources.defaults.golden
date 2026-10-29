@@ -1,0 +1,526 @@
+[
+	{
+		"metadata": {
+			"name": "sqlproxy",
+			"creationTimestamp": null
+		},
+		"spec": {
+			"podSelector": {
+				"matchLabels": {
+					"app": "sqlproxy"
+				}
+			},
+			"ingress": [
+				{
+					"ports": [
+						{
+							"protocol": "TCP",
+							"port": 26257
+						},
+						{
+							"protocol": "TCP",
+							"port": 26259
+						}
+					]
+				},
+				{
+					"from": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "prometheus"
+								}
+							},
+							"namespaceSelector": {}
+						},
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "otelcol-agent"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"from": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "sqlproxy"
+								}
+							}
+						}
+					]
+				}
+			],
+			"egress": [
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"k8s-app": "kube-dns"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "cockroach-operator"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchExpressions": [
+									{
+										"key": "app",
+										"operator": "In",
+										"values": [
+											"tenantpool"
+										]
+									}
+								]
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "sqlproxy"
+								}
+							}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"ipBlock": {
+								"cidr": "127.0.0.1/32"
+							}
+						}
+					]
+				}
+			]
+		},
+		"status": {}
+	},
+	{
+		"metadata": {
+			"name": "sqlproxy",
+			"creationTimestamp": null
+		},
+		"value": 500000000
+	},
+	{
+		"metadata": {
+			"name": "sqlproxy",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "sqlproxy"
+			}
+		},
+		"spec": {
+			"replicas": 5,
+			"selector": {
+				"matchLabels": {
+					"app": "sqlproxy"
+				}
+			},
+			"template": {
+				"metadata": {
+					"creationTimestamp": null,
+					"labels": {
+						"app": "sqlproxy"
+					}
+				},
+				"spec": {
+					"volumes": [
+						{
+							"name": "certs",
+							"secret": {
+								"secretName": "sql-proxy-external-certs",
+								"items": [
+									{
+										"key": "sql-proxy-external.crt",
+										"path": "external.crt"
+									},
+									{
+										"key": "sql-proxy-external.key",
+										"path": "external.key"
+									}
+								],
+								"defaultMode": 288
+							}
+						},
+						{
+							"name": "config",
+							"configMap": {
+								"name": "sqlproxy-config",
+								"defaultMode": 256
+							}
+						},
+						{
+							"name": "allowlist",
+							"configMap": {
+								"name": "sqlproxy-allowlist",
+								"defaultMode": 256
+							}
+						},
+						{
+							"name": "tenant-ca-certificate",
+							"secret": {
+								"secretName": "node-certs",
+								"items": [
+									{
+										"key": "ca.crt",
+										"path": "tenant-ca.crt"
+									}
+								],
+								"defaultMode": 288
+							}
+						},
+						{
+							"name": "tenantdir-certs",
+							"secret": {
+								"secretName": "tenantdir-certs",
+								"defaultMode": 288
+							}
+						},
+						{
+							"name": "inflightdir",
+							"emptyDir": {}
+						}
+					],
+					"containers": [
+						{
+							"name": "sqlproxy",
+							"image": "CUSTOMREPO:CUSTOMCRDBIMAGEVERSIONHERE",
+							"command": [
+								"/bin/bash",
+								"-ecx",
+								"exec /cockroach/cockroach mt start-proxy --listen-addr=0.0.0.0:26257 --listen-cert=/cockroach/cockroach-certs/external.crt --listen-key=/cockroach/cockroach-certs/external.key --denylist-file=/cockroach/config/denylist.yml --directory=:8081 --log=\"{ sinks : { stderr : { filter : info } } }\""
+							],
+							"ports": [
+								{
+									"name": "sql",
+									"containerPort": 26257,
+									"protocol": "TCP"
+								},
+								{
+									"name": "sql-pp",
+									"containerPort": 26259,
+									"protocol": "TCP"
+								},
+								{
+									"name": "prometheus",
+									"containerPort": 8080,
+									"protocol": "TCP"
+								}
+							],
+							"resources": {
+								"requests": {
+									"memory": "50Mi"
+								}
+							},
+							"volumeMounts": [
+								{
+									"name": "certs",
+									"readOnly": true,
+									"mountPath": "/cockroach/cockroach-certs"
+								},
+								{
+									"name": "config",
+									"readOnly": true,
+									"mountPath": "/cockroach/config"
+								},
+								{
+									"name": "tenant-ca-certificate",
+									"readOnly": true,
+									"mountPath": "/etc/ssl/certs/tenant-ca.crt",
+									"subPath": "tenant-ca.crt"
+								},
+								{
+									"name": "inflightdir",
+									"mountPath": "/cockroach/inflight_trace_dump"
+								}
+							],
+							"livenessProbe": {
+								"httpGet": {
+									"path": "/_status/healthz",
+									"port": 8080,
+									"scheme": "HTTP"
+								},
+								"initialDelaySeconds": 5,
+								"timeoutSeconds": 5,
+								"periodSeconds": 10
+							},
+							"lifecycle": {
+								"preStop": {
+									"exec": {
+										"command": [
+											"/bin/sh",
+											"-c",
+											"PID=$(ls -l /proc/*/exe 2\u003e /dev/null | grep cockroach/cockroach | sed -E 's/^.*proc\\/([0-9]+).*$/\\1/g'); kill -s TERM $PID; sleep 60"
+										]
+									}
+								}
+							},
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						},
+						{
+							"name": "tenantdir",
+							"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/tenantdir:master",
+							"command": [
+								"/bin/tenantdir",
+								"--listen-addr=0.0.0.0:8081",
+								"--operator-addr=cockroach-operator.default.svc:9070"
+							],
+							"ports": [
+								{
+									"name": "http",
+									"containerPort": 8081,
+									"protocol": "TCP"
+								},
+								{
+									"name": "td-prometheus",
+									"containerPort": 8082,
+									"protocol": "TCP"
+								}
+							],
+							"env": [
+								{
+									"name": "K8S_NAMESPACE",
+									"valueFrom": {
+										"fieldRef": {
+											"fieldPath": "metadata.namespace"
+										}
+									}
+								}
+							],
+							"resources": {},
+							"volumeMounts": [
+								{
+									"name": "tenantdir-certs",
+									"mountPath": "/certs"
+								}
+							],
+							"readinessProbe": {
+								"grpc": {
+									"port": 8081,
+									"service": null
+								},
+								"successThreshold": 2
+							},
+							"imagePullPolicy": "IfNotPresent",
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						},
+						{
+							"name": "cert-reloader",
+							"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/inotifywait:87edf086db32734c7fa083a62d1055d664900840",
+							"args": [
+								"cockroach",
+								"/cockroach/cockroach-certs",
+								"/cockroach/config"
+							],
+							"resources": {},
+							"volumeMounts": [
+								{
+									"name": "certs",
+									"readOnly": true,
+									"mountPath": "/cockroach/cockroach-certs"
+								},
+								{
+									"name": "config",
+									"readOnly": true,
+									"mountPath": "/cockroach/config"
+								}
+							],
+							"imagePullPolicy": "IfNotPresent",
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						}
+					],
+					"terminationGracePeriodSeconds": 3600,
+					"serviceAccountName": "sqlproxy",
+					"shareProcessNamespace": true,
+					"securityContext": {
+						"runAsUser": 1000,
+						"runAsGroup": 1000,
+						"runAsNonRoot": true,
+						"fsGroup": 1000,
+						"fsGroupChangePolicy": "OnRootMismatch"
+					},
+					"affinity": {
+						"podAntiAffinity": {
+							"preferredDuringSchedulingIgnoredDuringExecution": [
+								{
+									"weight": 1,
+									"podAffinityTerm": {
+										"labelSelector": {
+											"matchExpressions": [
+												{
+													"key": "app",
+													"operator": "In",
+													"values": [
+														"sqlproxy"
+													]
+												}
+											]
+										},
+										"topologyKey": "kubernetes.io/hostname"
+									}
+								}
+							]
+						}
+					},
+					"priorityClassName": "sqlproxy"
+				}
+			},
+			"strategy": {
+				"type": "RollingUpdate",
+				"rollingUpdate": {
+					"maxSurge": "50%"
+				}
+			}
+		},
+		"status": {}
+	},
+	{
+		"metadata": {
+			"name": "sqlproxy-config",
+			"creationTimestamp": null
+		},
+		"data": {
+			"denylist.yml": "SequenceNumber: 0"
+		}
+	},
+	{
+		"metadata": {
+			"name": "sqlproxy-allowlist",
+			"creationTimestamp": null
+		},
+		"data": {
+			"allowlist.json": "{\"allowlist\":{}}"
+		}
+	},
+	{
+		"metadata": {
+			"name": "sqlproxy",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "sqlproxy"
+			}
+		}
+	},
+	{
+		"metadata": {
+			"name": "tenantdir",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "sqlproxy"
+			}
+		},
+		"rules": [
+			{
+				"verbs": [
+					"get",
+					"update",
+					"watch"
+				],
+				"apiGroups": [
+					"crdb.cockroachlabs.com"
+				],
+				"resources": [
+					"crdbtenants"
+				]
+			},
+			{
+				"verbs": [
+					"list"
+				],
+				"apiGroups": [
+					"crdb.cockroachlabs.com"
+				],
+				"resources": [
+					"crdbclusters"
+				]
+			},
+			{
+				"verbs": [
+					"list",
+					"watch"
+				],
+				"apiGroups": [
+					""
+				],
+				"resources": [
+					"pods"
+				]
+			}
+		]
+	},
+	{
+		"metadata": {
+			"name": "tenantdir",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "sqlproxy"
+			}
+		},
+		"subjects": [
+			{
+				"kind": "ServiceAccount",
+				"name": "sqlproxy"
+			}
+		],
+		"roleRef": {
+			"apiGroup": "rbac.authorization.k8s.io",
+			"kind": "Role",
+			"name": "tenantdir"
+		}
+	}
+]

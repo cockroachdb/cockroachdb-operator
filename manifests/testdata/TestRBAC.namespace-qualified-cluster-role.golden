@@ -1,0 +1,112 @@
+[
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"namespace": "my-ns",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		}
+	},
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"rules": [
+			{
+				"verbs": [
+					"create",
+					"get"
+				],
+				"apiGroups": [
+					""
+				],
+				"resources": [
+					"secrets"
+				]
+			}
+		]
+	},
+	{
+		"metadata": {
+			"name": "my-ns-cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"rules": [
+			{
+				"verbs": [
+					"create",
+					"get",
+					"watch"
+				],
+				"apiGroups": [
+					"certificates.k8s.io"
+				],
+				"resources": [
+					"certificatesigningrequests"
+				]
+			},
+			{
+				"verbs": [
+					"get"
+				],
+				"apiGroups": [
+					""
+				],
+				"resources": [
+					"nodes"
+				]
+			}
+		]
+	},
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"subjects": [
+			{
+				"kind": "ServiceAccount",
+				"name": "cockroachdb",
+				"namespace": "my-ns"
+			}
+		],
+		"roleRef": {
+			"apiGroup": "rbac.authorization.k8s.io",
+			"kind": "Role",
+			"name": "cockroachdb"
+		}
+	},
+	{
+		"metadata": {
+			"name": "my-ns-cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"subjects": [
+			{
+				"kind": "ServiceAccount",
+				"name": "cockroachdb",
+				"namespace": "my-ns"
+			}
+		],
+		"roleRef": {
+			"apiGroup": "rbac.authorization.k8s.io",
+			"kind": "ClusterRole",
+			"name": "my-ns-cockroachdb"
+		}
+	}
+]

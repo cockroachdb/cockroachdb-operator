@@ -1,0 +1,619 @@
+[
+	{
+		"metadata": {
+			"name": "tenantpool-custom-otel-image",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "tenantpool",
+				"tenantpool-name": "custom-otel-image"
+			}
+		},
+		"spec": {
+			"replicas": 0,
+			"selector": {
+				"matchLabels": {
+					"app": "tenantpool",
+					"tenantpool-name": "custom-otel-image"
+				},
+				"matchExpressions": [
+					{
+						"key": "tenant-id",
+						"operator": "DoesNotExist"
+					}
+				]
+			},
+			"template": {
+				"metadata": {
+					"creationTimestamp": null,
+					"labels": {
+						"app": "tenantpool",
+						"state": "PENDING",
+						"tenantpool-name": "custom-otel-image"
+					}
+				},
+				"spec": {
+					"volumes": [
+						{
+							"name": "bin",
+							"emptyDir": {}
+						},
+						{
+							"name": "manager-data",
+							"emptyDir": {}
+						},
+						{
+							"name": "sqlstarter-certs",
+							"secret": {
+								"secretName": "sqlstarter-certs",
+								"items": [
+									{
+										"key": "sqlstarter.crt",
+										"path": "sqlstarter.crt"
+									},
+									{
+										"key": "sqlstarter.key",
+										"path": "sqlstarter.key"
+									}
+								],
+								"defaultMode": 288
+							}
+						},
+						{
+							"name": "otelcol-data",
+							"emptyDir": {}
+						},
+						{
+							"name": "cockroach-data",
+							"emptyDir": {}
+						},
+						{
+							"name": "cockroach-certs",
+							"emptyDir": {}
+						},
+						{
+							"name": "cockroachdb-logging",
+							"configMap": {}
+						},
+						{
+							"name": "fluent-bit-data",
+							"emptyDir": {}
+						},
+						{
+							"name": "fluent-bit-storage",
+							"emptyDir": {}
+						}
+					],
+					"initContainers": [
+						{
+							"name": "init-bin",
+							"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/init-sqlsidecar:881122ac5f08ef50d574cc5d736338373a386c79",
+							"command": [
+								"sh",
+								"-c",
+								"cp init-sqlsidecar /cockroach/bin/init-sqlsidecar"
+							],
+							"resources": {},
+							"volumeMounts": [
+								{
+									"name": "bin",
+									"mountPath": "/cockroach/bin"
+								}
+							],
+							"imagePullPolicy": "IfNotPresent",
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						}
+					],
+					"containers": [
+						{
+							"name": "cockroachdb",
+							"command": [
+								"/bin/bash",
+								"-cx",
+								"/cockroach/cockroach mt start-sql --tenant-id-file /cockroach/cockroach-certs/STARTER_CHECKPOINT --certs-dir /cockroach/cockroach-certs --kv-addrs cockroachdb-internal:0 --sql-addr :26257 --listen-addr :26258 --log-config-file /cockroach/config/logs.yaml --log-config-vars HOST_IP --advertise-addr $(echo $POD_IP | sed s/\\\\./-/g).$K8S_NAMESPACE.pod.cluster.local --max-sql-memory 30% --store path=/cockroach/cockroach-data --max-disk-temp-storage 7.2G --external-io-disable-implicit-credentials --external-io-disabled"
+							],
+							"ports": [
+								{
+									"name": "sql",
+									"containerPort": 26257,
+									"protocol": "TCP"
+								},
+								{
+									"name": "grpc",
+									"containerPort": 26258,
+									"protocol": "TCP"
+								},
+								{
+									"name": "https",
+									"containerPort": 8080,
+									"protocol": "TCP"
+								}
+							],
+							"env": [
+								{
+									"name": "COCKROACH_CERTS_DIR",
+									"value": "/cockroach/cockroach-certs"
+								},
+								{
+									"name": "COCKROACH_TENANT_LICENSE",
+									"value": "crl-0-EICHtcMDGAEiDkNvY2tyb2FjaCBMYWJz"
+								},
+								{
+									"name": "COCKROACH_TRUST_CLIENT_PROVIDED_SQL_REMOTE_ADDR",
+									"value": "true"
+								},
+								{
+									"name": "COCKROACH_ALWAYS_LOG_AUTHN_EVENTS",
+									"value": "true"
+								},
+								{
+									"name": "COCKROACH_SQL_TELEMETRY_QUERY_SAMPLING_ENABLED",
+									"value": "true"
+								},
+								{
+									"name": "COCKROACH_ENABLE_CLOUD_BILLING_ACCOUNTING",
+									"value": "true"
+								},
+								{
+									"name": "COCKROACH_MR_SYSTEM_DATABASE",
+									"value": "false"
+								},
+								{
+									"name": "COCKROACH_RPC_PORT",
+									"value": "26258"
+								},
+								{
+									"name": "COCKROACH_SQL_PORT",
+									"value": "26257"
+								},
+								{
+									"name": "K8S_NAMESPACE",
+									"valueFrom": {
+										"fieldRef": {
+											"fieldPath": "metadata.namespace"
+										}
+									}
+								},
+								{
+									"name": "POD_IP",
+									"valueFrom": {
+										"fieldRef": {
+											"fieldPath": "status.podIP"
+										}
+									}
+								},
+								{
+									"name": "HOST_IP",
+									"valueFrom": {
+										"fieldRef": {
+											"fieldPath": "status.hostIP"
+										}
+									}
+								}
+							],
+							"resources": {
+								"requests": {
+									"cpu": "50m",
+									"ephemeral-storage": "200M",
+									"memory": "750M"
+								}
+							},
+							"volumeMounts": [
+								{
+									"name": "cockroach-data",
+									"mountPath": "/cockroach/cockroach-data"
+								},
+								{
+									"name": "cockroach-certs",
+									"readOnly": true,
+									"mountPath": "/cockroach/cockroach-certs"
+								},
+								{
+									"name": "cockroachdb-logging",
+									"readOnly": true,
+									"mountPath": "/cockroach/config"
+								}
+							],
+							"imagePullPolicy": "IfNotPresent",
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						},
+						{
+							"name": "otelcol-agent",
+							"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/opentelemetry-collector-cc:CUSTOM",
+							"command": [
+								"/cockroach/bin/init-sqlsidecar",
+								"--tenant-id-file",
+								"/cockroach/otelcol-data/STARTER_CHECKPOINT",
+								"--env-var-dir",
+								"/cockroach/otelcol-data",
+								"--command",
+								"/otelcol-cc --config /cockroach/otelcol-data/otelcol-agent-config.yaml"
+							],
+							"ports": [
+								{
+									"name": "otel-metrics",
+									"containerPort": 9030,
+									"protocol": "TCP"
+								},
+								{
+									"name": "otel-scrape",
+									"containerPort": 9031,
+									"protocol": "TCP"
+								}
+							],
+							"env": [
+								{
+									"name": "K8S_NAMESPACE",
+									"valueFrom": {
+										"fieldRef": {
+											"fieldPath": "metadata.namespace"
+										}
+									}
+								},
+								{
+									"name": "POD_IP",
+									"valueFrom": {
+										"fieldRef": {
+											"fieldPath": "status.podIP"
+										}
+									}
+								}
+							],
+							"resources": {},
+							"volumeMounts": [
+								{
+									"name": "bin",
+									"readOnly": true,
+									"mountPath": "/cockroach/bin"
+								},
+								{
+									"name": "otelcol-data",
+									"readOnly": true,
+									"mountPath": "/cockroach/otelcol-data"
+								}
+							],
+							"imagePullPolicy": "IfNotPresent",
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						},
+						{
+							"name": "fluent-bit",
+							"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/fluent-bit-cc:v2.2.2-4622f5d37183",
+							"command": [
+								"/cockroach/bin/init-sqlsidecar",
+								"--tenant-id-file",
+								"/cockroach/fluent-bit-data/STARTER_CHECKPOINT",
+								"--command",
+								"/fluent-bit/bin/fluent-bit --config=/cockroach/fluent-bit-data/fluent-bit.conf"
+							],
+							"ports": [
+								{
+									"name": "fbit-redacted",
+									"containerPort": 5170
+								},
+								{
+									"name": "fbit-customer",
+									"containerPort": 5171
+								},
+								{
+									"name": "fbit-metrics",
+									"containerPort": 2020
+								}
+							],
+							"resources": {},
+							"volumeMounts": [
+								{
+									"name": "fluent-bit-data",
+									"readOnly": true,
+									"mountPath": "/cockroach/fluent-bit-data"
+								},
+								{
+									"name": "fluent-bit-storage",
+									"mountPath": "/cockroach/fluent-bit-storage"
+								},
+								{
+									"name": "bin",
+									"readOnly": true,
+									"mountPath": "/cockroach/bin"
+								}
+							],
+							"imagePullPolicy": "IfNotPresent",
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						},
+						{
+							"name": "sqlpod-manager",
+							"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/sqlstarter:c7c9546ed424c16d6f715cb7f64a4f69a0ef4406",
+							"command": [
+								"/cockroach/sqlstarter",
+								"--listen",
+								"0.0.0.0:8081",
+								"--cert-file",
+								"/cockroach/sqlstarter-certs/sqlstarter.crt",
+								"--key-file",
+								"/cockroach/sqlstarter-certs/sqlstarter.key",
+								"--checkpoint-file-name",
+								"STARTER_CHECKPOINT",
+								"--data-dir",
+								"/cockroach/manager-data"
+							],
+							"ports": [
+								{
+									"name": "sqlstarter",
+									"containerPort": 8081,
+									"protocol": "TCP"
+								}
+							],
+							"env": [
+								{
+									"name": "POD_UID",
+									"valueFrom": {
+										"fieldRef": {
+											"fieldPath": "metadata.uid"
+										}
+									}
+								}
+							],
+							"resources": {},
+							"volumeMounts": [
+								{
+									"name": "bin",
+									"readOnly": true,
+									"mountPath": "/cockroach/bin"
+								},
+								{
+									"name": "manager-data",
+									"mountPath": "/cockroach/manager-data"
+								},
+								{
+									"name": "sqlstarter-certs",
+									"readOnly": true,
+									"mountPath": "/cockroach/sqlstarter-certs"
+								},
+								{
+									"name": "otelcol-data",
+									"mountPath": "/cockroach/otelcol-data"
+								},
+								{
+									"name": "fluent-bit-data",
+									"mountPath": "/cockroach/fluent-bit-data"
+								},
+								{
+									"name": "cockroach-certs",
+									"mountPath": "/cockroach/cockroach-certs"
+								}
+							],
+							"startupProbe": {
+								"httpGet": {
+									"path": "/health",
+									"port": 8081,
+									"scheme": "HTTPS"
+								},
+								"periodSeconds": 1,
+								"failureThreshold": 15
+							},
+							"imagePullPolicy": "IfNotPresent",
+							"securityContext": {
+								"capabilities": {
+									"drop": [
+										"ALL"
+									]
+								},
+								"privileged": false,
+								"readOnlyRootFilesystem": true,
+								"allowPrivilegeEscalation": false
+							}
+						}
+					],
+					"securityContext": {
+						"runAsUser": 1000,
+						"runAsGroup": 1000,
+						"runAsNonRoot": true,
+						"fsGroup": 1000,
+						"fsGroupChangePolicy": "OnRootMismatch"
+					},
+					"topologySpreadConstraints": [
+						{
+							"maxSkew": 1,
+							"topologyKey": "kubernetes.io/hostname",
+							"whenUnsatisfiable": "ScheduleAnyway",
+							"labelSelector": {
+								"matchLabels": {
+									"app": "tenantpool",
+									"state": "PENDING",
+									"tenantpool-name": "custom-otel-image"
+								}
+							}
+						},
+						{
+							"maxSkew": 1,
+							"topologyKey": "topology.kubernetes.io/zone",
+							"whenUnsatisfiable": "ScheduleAnyway",
+							"labelSelector": {
+								"matchLabels": {
+									"app": "tenantpool",
+									"state": "PENDING",
+									"tenantpool-name": "custom-otel-image"
+								}
+							}
+						}
+					]
+				}
+			},
+			"strategy": {
+				"type": "RollingUpdate",
+				"rollingUpdate": {
+					"maxUnavailable": "25%",
+					"maxSurge": 0
+				}
+			}
+		},
+		"status": {}
+	},
+	{
+		"metadata": {
+			"name": "tenantpool-custom-otel-image",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "tenantpool",
+				"tenantpool-name": "custom-otel-image"
+			}
+		},
+		"spec": {
+			"podSelector": {
+				"matchLabels": {
+					"app": "tenantpool",
+					"tenantpool-name": "custom-otel-image"
+				}
+			},
+			"ingress": [
+				{
+					"from": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "prometheus"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"from": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "otelcol-agent"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"from": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "sqlproxy"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"from": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "cockroach-operator"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				}
+			],
+			"egress": [
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "fluent-bit"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "otelcol-agent"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"app": "cockroachdb"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"podSelector": {
+								"matchLabels": {
+									"k8s-app": "kube-dns"
+								}
+							},
+							"namespaceSelector": {}
+						}
+					]
+				},
+				{
+					"to": [
+						{
+							"ipBlock": {
+								"cidr": "13.248.219.156/32"
+							}
+						},
+						{
+							"ipBlock": {
+								"cidr": "76.223.93.89/32"
+							}
+						}
+					]
+				}
+			]
+		},
+		"status": {}
+	}
+]

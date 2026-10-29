@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "timeutil",
+    srcs = ["time.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/util/timeutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "timeutil_test",
+    srcs = ["time_test.go"],
+    embed = [":timeutil"],
+)

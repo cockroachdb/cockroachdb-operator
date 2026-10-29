@@ -1,0 +1,7 @@
+# Default values for the operator chart.
+image:
+  # TODO: once this is published somewhere, use the real repo.
+  repository: fake-repo/cockroach-operator
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the cluster chart's appVersion.
+  tag: ""

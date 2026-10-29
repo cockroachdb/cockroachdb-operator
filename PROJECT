@@ -1,0 +1,17 @@
+domain: cockroachlabs.com
+layout: go.kubebuilder.io/v2
+projectName: cockroach-operator
+repo: github.com/cockroachlabs/cockroach-enterprise-operator
+resources:
+- group: crdb
+  kind: CrdbTenant
+  version: v1beta1
+- group: crdb
+  kind: CrdbCluster
+  version: v1beta1
+- group: crdb
+  kind: CrdbNode
+  version: v1beta1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}

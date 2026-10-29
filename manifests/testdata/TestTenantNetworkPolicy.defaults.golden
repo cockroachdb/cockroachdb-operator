@@ -1,0 +1,57 @@
+{
+	"metadata": {
+		"name": "tenant-0",
+		"creationTimestamp": null,
+		"labels": {
+			"tenant-id": "0"
+		}
+	},
+	"spec": {
+		"podSelector": {
+			"matchLabels": {
+				"tenant-id": "0"
+			}
+		},
+		"ingress": [
+			{
+				"from": [
+					{
+						"podSelector": {
+							"matchLabels": {
+								"tenant-id": "0"
+							}
+						},
+						"namespaceSelector": {}
+					}
+				]
+			},
+			{
+				"from": [
+					{
+						"podSelector": {
+							"matchLabels": {
+								"name": "tailscale"
+							}
+						},
+						"namespaceSelector": {}
+					}
+				]
+			}
+		],
+		"egress": [
+			{
+				"to": [
+					{
+						"podSelector": {
+							"matchLabels": {
+								"tenant-id": "0"
+							}
+						},
+						"namespaceSelector": {}
+					}
+				]
+			}
+		]
+	},
+	"status": {}
+}

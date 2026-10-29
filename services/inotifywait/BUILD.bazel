@@ -1,0 +1,69 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//build:base_images.bzl", "select_base_image_for_inotifywait")
+load("//build:container.bzl", "data_plane_image", "oci_push", "oci_push_with_tags")
+load("//build:redhat_labels.bzl", "get_redhat_labels")
+
+go_library(
+    name = "inotifywait_lib",
+    srcs = ["graceful_inotifywait.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/services/inotifywait",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "inotifywait",
+    embed = [":inotifywait_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "inotifywait_test",
+    srcs = ["graceful_inotifywait_test.go"],
+    embed = [":inotifywait_lib"],
+    deps = ["@com_github_stretchr_testify//require"],
+)
+
+data_plane_image(
+    name = "container",
+    base = select_base_image_for_inotifywait(),
+    directory = "/bin/",
+    entrypoint = ["/bin/inotifywait"],
+    files = [":inotifywait"],
+    labels = get_redhat_labels("inotifywait"),
+    # matches the pod-level RunAsUser set by securitycontext.PodRunAsNonRoot
+    user = "1000",
+)
+
+oci_push(
+    name = "push_local",
+    image = ":container",
+    remote_tags = ["v1.0"],
+    repository = "localhost:5000/inotifywait",
+)
+
+oci_push_with_tags(
+    name = "push_development",
+    image = ":container",
+    repository = "us-docker.pkg.dev/cockroach-cloud-images/development/inotifywait",
+    stamped_tags = ["STABLE_BUILD_TAG"],
+)
+
+oci_push_with_tags(
+    name = "push_production_ubi",
+    image = ":container",
+    repository = "us-docker.pkg.dev/releases-prod/self-hosted/inotifywait",
+    stamped_tags = [
+        "STABLE_COMMIT_SHA",
+        "STABLE_BRANCH_NAME",
+        "STABLE_OPERATOR_VERSION_TAG",
+    ],
+)
+
+oci_push_with_tags(
+    name = "push_dockerhub",
+    image = ":container",
+    repository = "docker.io/cockroachdb/cockroachdb-cert-reloader",
+    stamped_tags = [
+        "STABLE_OPERATOR_VERSION_TAG",
+    ],
+)

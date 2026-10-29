@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "buildinfo",
+    srcs = ["info.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/buildinfo",
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "rev": "{STABLE_COMMIT_SHA}",
+        "tag": "{STABLE_BUILD_TAG}",
+        "typ": "{STABLE_BUILD_TYPE}",
+        "utcTime": "{BUILD_TIME}",
+        "version": "{STABLE_BUILD_VERSION}",
+        "operatorVersion": "{STABLE_OPERATOR_VERSION}",
+    },
+)
+
+go_test(
+    name = "buildinfo_test",
+    srcs = ["info_test.go"],
+    embed = [":buildinfo"],
+    deps = [
+        "//pkg/testutils",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,261 @@
+name: integration-tests
+
+on:
+  # Run integration tests nightly.
+  schedule:
+    - cron: "0 0 * * *"
+  # Or trigger on demand.
+  workflow_dispatch:
+  # Run on pushes to main
+  push:
+    branches:
+      - main
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest-x64-8-core
+    # id-token: write is required for the setup-private-go-modules action below,
+    # which authenticates to GCP via Workload Identity Federation. Composite
+    # actions cannot request their own permissions, so the caller must grant it.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      # Checkout comes first because setup-bazel keys its repository cache off
+      # WORKSPACE, and because the local actions below have to exist on disk.
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/free-disk-space
+      - uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+      - name: Setup Go 1.26
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.26.10
+      # `make generate` (run transitively by `make test/integration`) calls
+      # gazelle's update-repos, which shells out to `go list`/git to resolve
+      # modules not served by the public proxy -- including the private
+      # github.com/cockroachlabs/version. This action assumes the shared
+      # go-deps service account, mints an installation token for the listed
+      # repos, and rewrites the git URL so gazelle can clone the private repo.
+      # We leave GOPRIVATE to generate-bazel.sh, which already covers both the
+      # operator module and version.
+      - uses: cockroachdb/actions/setup-private-go-modules@v0
+        with:
+          repositories: cockroachlabs/version
+          configure-goprivate: false
+      - name: Configure system limits for containers
+        run: |
+          # Configure Docker daemon to pass higher limits to containers
+          sudo mkdir -p /etc/docker
+          sudo tee /etc/docker/daemon.json > /dev/null <<EOF
+          {
+            "default-ulimits": {
+              "nofile": {
+                "Name": "NOFILE",
+                "Hard": 1048576,
+                "Soft": 1048576
+              }
+            }
+          }
+          EOF
+
+          # Restart Docker to apply changes
+          sudo systemctl restart docker
+
+          # Wait for Docker to be ready
+          timeout 30 bash -c 'until docker info >/dev/null 2>&1; do sleep 1; done'
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      - name: Run tests
+        id: run-tests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          make bin/k3d
+          export PATH=$(pwd)/bin:$PATH
+          echo '{"type": "authorized_user"}' > creds.json
+
+          # We tee the output for later Slack parsing, but we still want the step
+          # (and thus the job) to fail if the tests fail.
+          set +e
+          GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/creds.json ARTIFACT_DIR="${GITHUB_WORKSPACE}/output" make test/integration 2>&1 | tee test_output.log
+          test_exit_code=${PIPESTATUS[0]}
+          set -e
+
+          echo "test_exit_code=$test_exit_code" >> "$GITHUB_OUTPUT"
+          exit "$test_exit_code"
+      - name: Dump operator logs
+        # The k3d cluster is torn down unless the test is cancelled explicitly
+        if: ${{ cancelled() }}
+        run: |
+          echo "=== Operator Deployment Status ==="
+          kubectl get -n default deployment cockroach-operator -o yaml || true
+
+          echo "=== Operator Pod Status ==="
+          kubectl get -n default pods -l app=cockroach-operator -o wide || true
+
+          echo "=== Operator Logs ==="
+          kubectl logs -n default -l app=cockroach-operator --tail=100000 || true
+      - name: Dump cluster state
+        # The k3d cluster is torn down unless the test is cancelled explicitly
+        if: ${{ cancelled() }}
+        run: |
+          echo "=== All Pods ==="
+          kubectl get pods -A -o wide
+
+          cluster_name=$(kubectl get crdbcluster -A -o jsonpath='{.items[*].metadata.name}')
+
+          echo "=== CrdbCluster ==="
+          kubectl describe -A crdbclusters || true
+
+          echo "=== CrdbNode ==="
+          kubectl describe -A crdbnodes || true
+
+          echo "=== Crdb Pods ==="
+          kubectl describe -A -l app=cockroachdb pods || true
+
+          echo "=== Crdb Logs ==="
+          for namespace in $(kubectl get namespace -o name | cut -d'/' -f2); do
+            kubectl logs -n "$namespace" -l app=cockroachdb --tail=100000 || true
+          done
+
+          echo "=== Events ==="
+          kubectl get events -A --sort-by='.lastTimestamp' || true
+      - name: Archive results
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          path: output
+      - uses: ./.github/actions/trim-bazel-cache
+        if: ${{ always() }}
+      - name: Send Slack summary notification
+        if: ${{ always() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL is not set; skipping Slack notification"
+            exit 0
+          fi
+          echo "Preparing test summary for Slack..."
+
+          # Parse test results from Go test output
+          echo "Parsing test results from test_output.log..."
+          echo "=== Debug: First 50 lines of test output ==="
+          head -n 50 test_output.log
+          echo "=== Debug: Last 50 lines of test output ==="
+          tail -n 50 test_output.log
+          echo "=== Debug: Looking for test patterns ==="
+
+          # Look for individual test results (child tests first, then parent tests)
+          echo "Searching for child and parent test results..."
+
+          # First, look for child tests (subtests with / in name)
+          FAILED_CHILD_TESTS=$(grep -oE "--- FAIL: Test[A-Za-z0-9_]+/[^[:space:]]+" test_output.log | sed 's/--- FAIL: //' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+          PASSED_CHILD_TESTS=$(grep -oE "--- PASS: Test[A-Za-z0-9_]+/[^[:space:]]+" test_output.log | sed 's/--- PASS: //' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+
+          # If we have child tests, use those; otherwise fall back to parent tests
+          if [ -n "$FAILED_CHILD_TESTS" ]; then
+            FAILED_TESTS="$FAILED_CHILD_TESTS"
+            echo "Found child test failures: $FAILED_TESTS"
+          else
+            # Fall back to parent tests
+            FAILED_TESTS=$(grep -oE "--- FAIL: Test[A-Za-z0-9_]+" test_output.log | sed 's/--- FAIL: //' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+            echo "No child tests found, using parent tests: $FAILED_TESTS"
+          fi
+
+          if [ -n "$PASSED_CHILD_TESTS" ]; then
+            PASSED_TESTS="$PASSED_CHILD_TESTS"
+          else
+            PASSED_TESTS=$(grep -oE "--- PASS: Test[A-Za-z0-9_]+" test_output.log | sed 's/--- PASS: //' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+          fi
+
+          # Count unique individual tests
+          FAILED_COUNT=$(grep -oE "--- FAIL: Test[A-Za-z0-9_]+" test_output.log | sed 's/--- FAIL: //' | sort -u | wc -l | tr -d ' ')
+          PASSED_COUNT=$(grep -oE "--- PASS: Test[A-Za-z0-9_]+" test_output.log | sed 's/--- PASS: //' | sort -u | wc -l | tr -d ' ')
+
+          # If no individual tests found, look for RUN patterns
+          if [ -z "$FAILED_TESTS" ] && [ "$FAILED_COUNT" -eq 0 ]; then
+            echo "No individual test failures found, looking for RUN patterns..."
+            # Extract test names from RUN lines followed by failure output
+            FAILED_TESTS=$(grep -B5 -A5 "FAIL:" test_output.log | grep -oE "=== RUN   Test[A-Za-z0-9_]+" | sed 's/=== RUN   //' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+            FAILED_COUNT=$(grep -B5 -A5 "FAIL:" test_output.log | grep -oE "=== RUN   Test[A-Za-z0-9_]+" | sed 's/=== RUN   //' | sort -u | wc -l | tr -d ' ')
+          fi
+
+          if [ -z "$PASSED_TESTS" ] && [ "$PASSED_COUNT" -eq 0 ]; then
+            echo "No individual test passes found, looking for RUN patterns..."
+            PASSED_TESTS=$(grep -B5 -A5 "PASS:" test_output.log | grep -oE "=== RUN   Test[A-Za-z0-9_]+" | sed 's/=== RUN   //' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+            PASSED_COUNT=$(grep -B5 -A5 "PASS:" test_output.log | grep -oE "=== RUN   Test[A-Za-z0-9_]+" | sed 's/=== RUN   //' | sort -u | wc -l | tr -d ' ')
+          fi
+
+          # Final fallback: look at package level but extract meaningful info
+          if [ -z "$FAILED_TESTS" ] && [ "$FAILED_COUNT" -eq 0 ]; then
+            echo "Falling back to package-level results..."
+            # Extract just the package name (last part after /) and deduplicate
+            FAILED_TESTS=$(grep -E "FAIL\s+github.com/cockroachlabs/cockroach-enterprise-operator" test_output.log | awk '{print $2}' | sed 's|.*/||' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+            FAILED_COUNT=$(grep -E "FAIL\s+github.com/cockroachlabs/cockroach-enterprise-operator" test_output.log | awk '{print $2}' | sed 's|.*/||' | sort -u | wc -l | tr -d ' ')
+          fi
+
+          if [ -z "$PASSED_TESTS" ] && [ "$PASSED_COUNT" -eq 0 ]; then
+            PASSED_TESTS=$(grep -E "PASS\s+github.com/cockroachlabs/cockroach-enterprise-operator" test_output.log | awk '{print $2}' | sed 's|.*/||' | sort -u | head -n 20 | paste -sd "," - | sed 's/,/, /g')
+            PASSED_COUNT=$(grep -E "PASS\s+github.com/cockroachlabs/cockroach-enterprise-operator" test_output.log | awk '{print $2}' | sed 's|.*/||' | sort -u | wc -l | tr -d ' ')
+          fi
+
+          echo "=== Debug: Final results ==="
+          echo "FAILED_TESTS: $FAILED_TESTS"
+          echo "FAILED_COUNT: $FAILED_COUNT"
+          echo "PASSED_TESTS: $PASSED_TESTS" 
+          echo "PASSED_COUNT: $PASSED_COUNT"
+
+          if [ "$FAILED_COUNT" -gt 0 ]; then
+            STATUS="❌ *Some e2e tests failed!*"
+            COLOR="#ff0000"
+          else
+            STATUS="✅ *All e2e tests passed successfully!*"
+            COLOR="#36a64f"
+          fi
+
+          REPO_NAME="cockroach-enterprise-operator"
+
+          # Build Slack payload with test details
+          PAYLOAD=$(jq -n \
+            --arg text "$STATUS" \
+            --arg color "$COLOR" \
+            --arg repo "$REPO_NAME" \
+            --arg branch "${{ github.ref_name }}" \
+            --arg workflow "${{ github.workflow }}" \
+            --arg url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg passed "$PASSED_COUNT" \
+            --arg failed "$FAILED_COUNT" \
+            --arg passed_tests "$PASSED_TESTS" \
+            --arg failed_tests "$FAILED_TESTS" \
+            '{
+              text: $text,
+              attachments: [
+                {
+                  color: $color,
+                  fields: [
+                    {"title": "Repository", "value": $repo, "short": true},
+                    {"title": "Branch", "value": $branch, "short": true},
+                    {"title": "✅ Passed", "value": $passed, "short": true},
+                    {"title": "❌ Failed", "value": $failed, "short": true},
+                    {"title": "❌ Failed Tests", "value": (if $failed_tests == "" then "None" else $failed_tests end), "short": false},
+                    {"title": "✅ Passed Tests", "value": (if $passed_tests == "" then "None" else $passed_tests end), "short": false},
+                    {"title": "Run URL", "value": $url, "short": false}
+                  ]
+                }
+              ]
+            }')
+
+          echo "Sending Slack notification..."
+          curl -X POST -H 'Content-type: application/json' \
+            --data "$PAYLOAD" \
+            "$SLACK_WEBHOOK_URL"
+
+          echo "Slack notification sent ✅"

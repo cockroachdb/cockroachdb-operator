@@ -1,0 +1,44 @@
+# gitleaks configuration for this repository.
+#
+# The default rule set applies. The allowlist below covers key material that is
+# intentionally checked in for tests. Every entry needs a reason. Do not add a
+# path here to silence a finding in production code.
+
+title = "cockroach-operator"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test-only key material and known false positives"
+paths = [
+  # Vendored third-party code is scanned upstream and is not ours to edit.
+  '''^vendor/''',
+  # Deterministic RSA key used to make certificate tests reproducible. It is
+  # generated for tests and never used outside them.
+  '''^crypto/deterministic_keys\.pem$''',
+  # Unit tests that embed throwaway certificates and keys as literals.
+  '''^kubecrdb/crdbcerts/.*_test\.go$''',
+  '''^kube/proxy_test\.go$''',
+  '''^tenant/scale_test\.go$''',
+  # Golden files for certificate Secrets. Every key in them is the
+  # deterministic test key above, rendered by the fake signer.
+  '''^manifests/testdata/TestCrdbClusterCertSecrets_.*\.golden$''',
+  # Recorded kuberecord fixtures. They are captured from throwaway local k3d
+  # clusters using the deterministic test signer, so the only keys they carry
+  # are the test key above. scripts/scan-vcr-fixtures.sh checks that every
+  # private key in them is a known test key, plus the Kubernetes-specific
+  # checks for these files.
+  '''^.*/testdata/.*\.vcr\.yaml$''',
+]
+# Match the allowlist regexes against the whole matched text, not just the
+# extracted secret, so the flag name is visible to the pattern.
+regexTarget = "match"
+regexes = [
+  # CockroachDB locality flags in tenant pool golden files look like API keys
+  # to the generic rule but are plain key=value topology labels.
+  '''--locality=''',
+  # The test CA key embedded in crypto/fake_signer.go. Matching the key itself
+  # rather than the file keeps the rest of that file scanned.
+  '''MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgrqk/SjLA/FwqwQGz''',
+]

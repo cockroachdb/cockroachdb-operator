@@ -1,0 +1,245 @@
+# Regression test for CC-36635: after an operator restart during a rolling
+# update, the in-memory eviction map is empty. Without the fix, the cluster
+# controller blocks on ObservedGeneration < Generation in canProceedWithUpdate,
+# which prevents AllowNextEvictionFor from running, which prevents the node
+# controller from evicting — a permanent deadlock.
+
+create-cluster name=crdb image=cockroachdb/cockroach:v24.1.0
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Change the image to trigger a rolling update.
+set-cluster-image name=crdb image=cockroachdb/cockroach:v24.1.1
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Cluster controller applies spec to the first node.
+reconcile-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "3e74844d6d3e70ae"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Simulate the state after an operator crash mid-upgrade: crdb-0 has its spec
+# updated (revision matches current) but the node controller couldn't finish.
+# The fake client doesn't bump Generation on Apply, so we manually set
+# ObservedGeneration behind and PodNeedsUpdate=True to reproduce the deadlock.
+set-node-state name=crdb-0 observedGeneration=0 podNeedsUpdate=true
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "3e74844d6d3e70ae"
+	Generation: 1, Observed: 0
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+	PodNeedsUpdate  True     2023-01-01 00:04:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Wipe the eviction map to simulate the operator restart.
+reset-eviction-helper
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "3e74844d6d3e70ae"
+	Generation: 1, Observed: 0
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+	PodNeedsUpdate  True     2023-01-01 00:04:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# Without the fix, this reconcile would block on crdb-0's ObservedGeneration
+# being behind and never reach AllowNextEvictionFor. With the fix, the cluster
+# controller skips the generation gate for crdb-0 because PodNeedsUpdate is
+# true, reaches AllowNextEvictionFor, and the rolling update can continue.
+reconcile-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "3e74844d6d3e70ae"
+	Generation: 1, Observed: 0
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+	PodNeedsUpdate  True     2023-01-01 00:04:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+# The eviction map now has an entry. Node controller can evict crdb-0.
+reconcile-node name=crdb-0
+----
+CrdbCluster/crdb
+	Current Revision:  "3e74844d6d3e70ae"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.1"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "3e74844d6d3e70ae"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:07:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+	PodNeedsUpdate  False    2023-01-01 00:07:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC

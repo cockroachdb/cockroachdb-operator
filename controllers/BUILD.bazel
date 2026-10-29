@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "controllers",
+    srcs = [
+        "reconciler.go",
+        "result.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/controllers",
+    visibility = ["//visibility:public"],
+    deps = ["@io_k8s_sigs_controller_runtime//:controller-runtime"],
+)

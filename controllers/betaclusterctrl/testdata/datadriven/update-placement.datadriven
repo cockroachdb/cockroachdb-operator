@@ -1,0 +1,319 @@
+create-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+assign-node name=crdb-0 k8sNode=k8s-0
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+assign-node name=crdb-1 k8sNode=k8s-1
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: ''
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+assign-node name=crdb-2 k8sNode=k8s-2
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-2'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+reconcile-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0'
+	Spec K8s Node: 'k8s-0'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-2'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+reconcile-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0'
+	Spec K8s Node: 'k8s-0'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: 'k8s-1'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-2'
+	Spec K8s Node: ''
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+reconcile-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0'
+	Spec K8s Node: 'k8s-0'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: 'k8s-1'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-2'
+	Spec K8s Node: 'k8s-2'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+assign-node name=crdb-0 k8sNode=k8s-0-new
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0-new'
+	Spec K8s Node: 'k8s-0'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: 'k8s-1'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-2'
+	Spec K8s Node: 'k8s-2'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+set-node-state name=crdb-0 ready=false
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0-new'
+	Spec K8s Node: 'k8s-0'
+	PodReady        False    2023-01-01 00:09:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: 'k8s-1'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-2'
+	Spec K8s Node: 'k8s-2'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+
+reconcile-cluster name=crdb
+----
+CrdbCluster/crdb
+	Current Revision:  "b1dd166a2e210c99"
+	Previous Revision: "b1dd166a2e210c99"
+	Spec Image:        "cockroachdb/cockroach:v24.1.0"
+	Current Version:   ""
+CrdbNode/crdb-0
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-0-new'
+	Spec K8s Node: 'k8s-0-new'
+	PodReady        False    2023-01-01 00:09:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-1
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-1'
+	Spec K8s Node: 'k8s-1'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC
+CrdbNode/crdb-2
+	Desired Revision: "b1dd166a2e210c99"
+	Generation: 1, Observed: 1
+	Disk size: 5Gi
+	Assigned K8s Node: 'k8s-2'
+	Spec K8s Node: 'k8s-2'
+	PodReady        True     2023-01-01 00:01:00 +0000 UTC
+	PodRunning      True     2023-01-01 00:01:00 +0000 UTC

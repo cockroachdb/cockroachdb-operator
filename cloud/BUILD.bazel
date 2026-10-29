@@ -1,0 +1,63 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test", "gomock")
+
+go_library(
+    name = "cloud",
+    srcs = [
+        "aws_credentials.go",
+        "credential_provider.go",
+        "environment.go",
+        "gcp_credentials.go",
+        "network_plugin.go",
+        "provider.go",
+        "storage.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/cloud",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//pkg/logging",
+        "//pkg/utils/timeutils",
+        "@com_github_aws_aws_sdk_go//aws",
+        "@com_github_aws_aws_sdk_go//aws/credentials",
+        "@com_github_aws_aws_sdk_go//aws/credentials/stscreds",
+        "@com_github_aws_aws_sdk_go//aws/session",
+        "@com_github_aws_aws_sdk_go//service/sts",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1:apiextensions",
+        "@org_golang_google_api//impersonate",
+        "@org_golang_google_api//option",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+    ],
+)
+
+go_test(
+    name = "cloud_test",
+    srcs = [
+        "aws_credentials_test.go",
+        "credential_provider_test.go",
+        "environment_test.go",
+        "gcp_credentials_test.go",
+        "network_plugin_test.go",
+        "provider_test.go",
+    ],
+    embed = [":cloud"],
+    deps = [
+        "//kube/kubetest",
+        "//pkg/testutils",
+        "//pkg/utils/timeutils",
+        "@com_github_aws_aws_sdk_go//aws",
+        "@com_github_aws_aws_sdk_go//aws/credentials",
+        "@com_github_aws_aws_sdk_go//aws/credentials/stscreds",
+        "@com_github_aws_aws_sdk_go//aws/request",
+        "@com_github_aws_aws_sdk_go//service/sts",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1:apiextensions",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@org_golang_google_api//impersonate",
+        "@org_golang_google_api//option",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

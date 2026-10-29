@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sliceutils",
+    srcs = ["functions.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/utils/sliceutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sliceutils_test",
+    srcs = ["functions_test.go"],
+    embed = [":sliceutils"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

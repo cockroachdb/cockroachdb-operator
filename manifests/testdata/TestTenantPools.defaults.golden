@@ -1,0 +1,10 @@
+[
+	{
+		"metadata": {
+			"name": "crdb-tenant",
+			"creationTimestamp": null
+		},
+		"value": 1000,
+		"description": "CRDB priority for tenant pods"
+	}
+]

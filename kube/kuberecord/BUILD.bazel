@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kuberecord",
+    srcs = [
+        "recorder.go",
+        "util.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/kube/kuberecord",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_cenkalti_backoff//:backoff",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_dnaeon_go_vcr//recorder",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_client_go//rest",
+    ],
+)

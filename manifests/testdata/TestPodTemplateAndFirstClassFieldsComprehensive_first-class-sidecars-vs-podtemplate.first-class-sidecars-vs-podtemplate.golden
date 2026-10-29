@@ -1,0 +1,296 @@
+{
+  "metadata": {
+    "name": "sidecar-conflict-test",
+    "namespace": "test-ns",
+    "creationTimestamp": null,
+    "labels": {
+      "app": "cockroachdb",
+      "cluster": "test-cluster",
+      "crdb.cockroachlabs.com/cluster": "",
+      "crdb.cockroachlabs.com/podName": "sidecar-conflict-test",
+      "svc": "cockroachdb"
+    },
+    "annotations": {
+      "crdb.cockroachlabs.com/nodeGeneration": "0",
+      "crdb.cockroachlabs.com/nodeRevision": "a29a117bdfc23087"
+    }
+  },
+  "spec": {
+    "volumes": [
+      {
+        "name": "deprecated-volume",
+        "secret": {
+          "secretName": "overridden-secret"
+        }
+      },
+      {
+        "name": "datadir",
+        "persistentVolumeClaim": {
+          "claimName": "test-pvc-sidecar-conflict-test"
+        }
+      },
+      {
+        "name": "cockroach-env",
+        "emptyDir": {}
+      },
+      {
+        "name": "certs",
+        "emptyDir": {}
+      },
+      {
+        "name": "template-volume",
+        "configMap": {
+          "name": "template-config"
+        }
+      }
+    ],
+    "initContainers": [
+      {
+        "name": "deprecated-init",
+        "image": "overridden-init:v3.0.0",
+        "env": [
+          {
+            "name": "DEPRECATED_INIT_ENV",
+            "value": "deprecated-value"
+          },
+          {
+            "name": "OVERRIDDEN_INIT_ENV",
+            "value": "overridden-value"
+          }
+        ],
+        "resources": {}
+      },
+      {
+        "name": "cockroachdb-init",
+        "image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/init-container:1b34da213707c4a89c7e794a19fbbfef5a1affe8",
+        "command": [
+          "init-container",
+          "-locality-dest",
+          "/etc/cockroach-env"
+        ],
+        "env": [
+          {
+            "name": "KUBERNETES_NODE",
+            "valueFrom": {
+              "fieldRef": {
+                "fieldPath": "spec.nodeName"
+              }
+            }
+          },
+          {
+            "name": "PUSHGATEWAY_NAMESPACE",
+            "value": "monitoring-test-ns"
+          },
+          {
+            "name": "ERROR_ON_MISSING_LABELS",
+            "value": "1"
+          }
+        ],
+        "resources": {},
+        "volumeMounts": [
+          {
+            "name": "cockroach-env",
+            "mountPath": "/etc/cockroach-env"
+          }
+        ]
+      },
+      {
+        "name": "template-init",
+        "image": "template-init:v2.0.0",
+        "env": [
+          {
+            "name": "TEMPLATE_INIT_ENV",
+            "value": "template-value"
+          }
+        ],
+        "resources": {}
+      }
+    ],
+    "containers": [
+      {
+        "name": "deprecated-sidecar",
+        "image": "deprecated-sidecar:v1.0.0",
+        "ports": [
+          {
+            "name": "deprecated-port",
+            "containerPort": 8888
+          }
+        ],
+        "env": [
+          {
+            "name": "DEPRECATED_SIDECAR_ENV",
+            "value": "deprecated-value"
+          }
+        ],
+        "resources": {}
+      },
+      {
+        "name": "cockroachdb",
+        "image": "cockroachdb/cockroach:v23.1.0",
+        "command": [
+          "/bin/bash",
+          "-exc",
+          "ulimit -S -n 1048576;  exec /cockroach/cockroach start --certs-dir /cockroach/cockroach-certs --listen-addr 0.0.0.0:26258 --http-addr 0.0.0.0:8080 --sql-addr 0.0.0.0:26257 --advertise-addr sidecar-conflict-test..test-ns.svc.cluster.local:26258 --advertise-sql-addr sidecar-conflict-test..test-ns.svc.cluster.local:26257 --join  --locality dns=sidecar-conflict-test..test-ns.svc.cluster.local --log='sinks: {stderr: {channels: {INFO: \"HEALTH,OPS\", WARNING: \"STORAGE,DEV\"}}}' --cache=25% --max-sql-memory=25%"
+        ],
+        "ports": [
+          {
+            "name": "grpc",
+            "containerPort": 26258,
+            "protocol": "TCP"
+          },
+          {
+            "name": "http",
+            "containerPort": 8080,
+            "protocol": "TCP"
+          },
+          {
+            "name": "sql",
+            "containerPort": 26257,
+            "protocol": "TCP"
+          }
+        ],
+        "env": [
+          {
+            "name": "COCKROACH_CERTS_DIR",
+            "value": "/cockroach/cockroach-certs"
+          },
+          {
+            "name": "COCKROACH_HOST",
+            "value": "localhost:26257"
+          },
+          {
+            "name": "COCKROACH_RPC_PORT",
+            "value": "26258"
+          },
+          {
+            "name": "COCKROACH_SQL_PORT",
+            "value": "26257"
+          },
+          {
+            "name": "HOST_IP",
+            "valueFrom": {
+              "fieldRef": {
+                "apiVersion": "v1",
+                "fieldPath": "status.hostIP"
+              }
+            }
+          }
+        ],
+        "resources": {
+          "limits": {
+            "memory": "0"
+          },
+          "requests": {
+            "memory": "0"
+          }
+        },
+        "volumeMounts": [
+          {
+            "name": "certs",
+            "readOnly": true,
+            "mountPath": "/cockroach/cockroach-certs"
+          },
+          {
+            "name": "cockroach-env",
+            "readOnly": true,
+            "mountPath": "/etc/cockroach-env"
+          },
+          {
+            "name": "datadir",
+            "mountPath": "/cockroach/cockroach-data"
+          }
+        ],
+        "readinessProbe": {
+          "httpGet": {
+            "path": "/health?ready=1",
+            "port": "http",
+            "scheme": "HTTPS"
+          },
+          "initialDelaySeconds": 10,
+          "timeoutSeconds": 10,
+          "periodSeconds": 10,
+          "successThreshold": 1,
+          "failureThreshold": 2
+        },
+        "securityContext": {
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": false
+        }
+      },
+      {
+        "name": "cert-reloader",
+        "image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/inotifywait:87edf086db32734c7fa083a62d1055d664900840",
+        "args": [
+          "cockroach",
+          "/cockroach/cockroach-certs"
+        ],
+        "resources": {},
+        "volumeMounts": [
+          {
+            "name": "certs",
+            "readOnly": true,
+            "mountPath": "/cockroach/cockroach-certs"
+          }
+        ],
+        "imagePullPolicy": "IfNotPresent",
+        "securityContext": {
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "privileged": false,
+          "readOnlyRootFilesystem": true,
+          "allowPrivilegeEscalation": false
+        }
+      },
+      {
+        "name": "template-sidecar",
+        "image": "template-sidecar:v2.0.0",
+        "env": [
+          {
+            "name": "TEMPLATE_SIDECAR_ENV",
+            "value": "template-value"
+          }
+        ],
+        "resources": {}
+      }
+    ],
+    "terminationGracePeriodSeconds": 2700,
+    "shareProcessNamespace": true,
+    "securityContext": {
+      "runAsUser": 1000,
+      "runAsGroup": 1000,
+      "runAsNonRoot": false,
+      "fsGroup": 1000,
+      "fsGroupChangePolicy": "OnRootMismatch"
+    },
+    "hostname": "sidecar-conflict-test",
+    "affinity": {
+      "podAntiAffinity": {
+        "requiredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "labelSelector": {
+              "matchLabels": {
+                "app": "cockroachdb",
+                "crdb.cockroachlabs.com/cluster": ""
+              }
+            },
+            "namespaces": [
+              "test-ns"
+            ],
+            "topologyKey": "kubernetes.io/hostname"
+          }
+        ]
+      }
+    },
+    "priorityClassName": "crdb-critical"
+  },
+  "status": {}
+}

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tracing",
+    srcs = ["spans.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/tracing",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)

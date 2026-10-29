@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "crdbcerts",
+    srcs = [
+        "create_certs.go",
+        "delete_certs.go",
+        "get_certs.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/kubecrdb/crdbcerts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//crypto",
+        "//kube",
+        "//kube/kubeerrors",
+        "//manifests",
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+go_test(
+    name = "crdbcerts_test",
+    srcs = [
+        "create_certs_test.go",
+        "delete_certs_test.go",
+        "get_certs_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":crdbcerts"],
+    deps = [
+        "//api/v1beta1",
+        "//crypto",
+        "//kube",
+        "//kube/kubeerrors",
+        "//kube/kubetest",
+        "//manifests",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+    ],
+)

@@ -1,0 +1,115 @@
+[
+	{
+		"apiVersion": "cilium.io/v2",
+		"kind": "CiliumClusterwideNetworkPolicy",
+		"metadata": {
+			"name": "cockroachdb"
+		},
+		"spec": {
+			"egress": [
+				{
+					"toEntities": [
+						"host"
+					]
+				},
+				{
+					"toEndpoints": [
+						{
+							"matchLabels": {
+								"app": "cockroachdb"
+							}
+						}
+					]
+				},
+				{
+					"toEndpoints": [
+						{
+							"matchLabels": {
+								"app": "fluent-bit"
+							}
+						}
+					]
+				},
+				{
+					"toEndpoints": [
+						{
+							"matchLabels": {
+								"k8s:io.kubernetes.pod.namespace": "kube-system",
+								"k8s:k8s-app": "kube-dns"
+							}
+						}
+					],
+					"toPorts": [
+						{
+							"ports": [
+								{
+									"port": "53",
+									"protocol": "ANY"
+								}
+							],
+							"rules": {
+								"dns": [
+									{
+										"matchPattern": "*"
+									}
+								]
+							}
+						}
+					]
+				},
+				{
+					"toServices": [
+						{
+							"k8sService": {
+								"namespace": "default",
+								"serviceName": "kubernetes"
+							}
+						}
+					]
+				},
+				{
+					"toCIDR": [
+						"10.0.0.0/8",
+						"172.16.0.0/12",
+						"192.168.0.0/16",
+						"169.254.169.254/32"
+					]
+				}
+			],
+			"endpointSelector": {
+				"matchLabels": {
+					"app": "cockroachdb"
+				}
+			}
+		}
+	},
+	{
+		"apiVersion": "cilium.io/v2",
+		"kind": "CiliumNetworkPolicy",
+		"metadata": {
+			"name": "cockroachdb-internal-ingress"
+		},
+		"spec": {
+			"endpointSelector": {
+				"matchLabels": {
+					"app": "cockroachdb"
+				}
+			},
+			"ingress": [
+				{
+					"fromEntities": [
+						"cluster"
+					]
+				},
+				{
+					"fromCIDR": [
+						"10.0.0.0/8",
+						"172.16.0.0/12",
+						"192.168.0.0/16",
+						"9.9.9.9/32"
+					]
+				}
+			]
+		}
+	}
+]

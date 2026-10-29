@@ -1,0 +1,59 @@
+{
+	"metadata": {
+		"name": "cockroachdb-init",
+		"creationTimestamp": null
+	},
+	"spec": {
+		"parallelism": 1,
+		"completions": 1,
+		"backoffLimit": 6,
+		"template": {
+			"metadata": {
+				"creationTimestamp": null,
+				"labels": {
+					"jobname": "cockroachdb-init"
+				}
+			},
+			"spec": {
+				"containers": [
+					{
+						"name": "cluster-init",
+						"image": "cockroachdb/cockroach:v20.2",
+						"command": [
+							"/bin/bash",
+							"-ecx",
+							"until /cockroach/cockroach init --insecure--host=cockroachdb-0.cockroachdb --port 26257; do sleep 5; done"
+						],
+						"resources": {},
+						"terminationMessagePath": "/dev/termination-log",
+						"terminationMessagePolicy": "File",
+						"imagePullPolicy": "IfNotPresent",
+						"securityContext": {
+							"capabilities": {
+								"drop": [
+									"ALL"
+								]
+							},
+							"privileged": false,
+							"readOnlyRootFilesystem": true,
+							"allowPrivilegeEscalation": false
+						}
+					}
+				],
+				"restartPolicy": "OnFailure",
+				"terminationGracePeriodSeconds": 30,
+				"dnsPolicy": "ClusterFirst",
+				"serviceAccountName": "cockroachdb",
+				"securityContext": {
+					"runAsUser": 1000,
+					"runAsGroup": 1000,
+					"runAsNonRoot": true,
+					"fsGroup": 1000,
+					"fsGroupChangePolicy": "OnRootMismatch"
+				},
+				"schedulerName": "default-scheduler"
+			}
+		}
+	},
+	"status": {}
+}

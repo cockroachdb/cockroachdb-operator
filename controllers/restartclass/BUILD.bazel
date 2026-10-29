@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "restartclass",
+    srcs = ["classifier.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/controllers/restartclass",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//manifests",
+        "@io_k8s_api//core/v1:core",
+    ],
+)

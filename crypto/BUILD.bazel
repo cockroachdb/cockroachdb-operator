@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test", "gomock")
+
+go_library(
+    name = "crypto",
+    srcs = [
+        "certificate_signer.go",
+        "crypto.go",
+        "fake_signer.go",
+        "k8s_secret_config.go",
+    ],
+    embedsrcs = ["deterministic_keys.pem"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/crypto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube",
+        "//pkg/utils/timeutils",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+go_test(
+    name = "crypto_test",
+    srcs = [
+        "crypto_test.go",
+        "fake_signer_test.go",
+        "k8s_secret_config_test.go",
+    ],
+    embed = [":crypto"],
+    deps = [
+        "//kube",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

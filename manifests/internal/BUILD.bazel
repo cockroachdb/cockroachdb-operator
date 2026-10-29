@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "internal",
+    srcs = ["assets.go"],
+    embedsrcs = [
+        "yaml/cockroach-operator.yaml",
+        "yaml/crdb.cockroachlabs.com_crdbclusters.yaml",
+        "yaml/crdb.cockroachlabs.com_crdbnodes.yaml",
+        "yaml/crdb.cockroachlabs.com_crdbtenants.yaml",
+        "yaml/fluentbit-testenv.yaml",
+        "yaml/k3d-calico/calico-cni.yaml",
+        "yaml/samples/crdb_v1beta1_crdbcluster.yaml",
+        "yaml/samples/crdb_v1beta1_crdbtenant.yaml",
+        "yaml/samples/crdbcluster_editor_role.yaml",
+        "yaml/samples/crdbcluster_viewer_role.yaml",
+        "yaml/samples/crdbtenant_editor_role.yaml",
+        "yaml/samples/crdbtenant_viewer_role.yaml",
+        "yaml/webhook.yaml",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/manifests/internal",
+    visibility = ["//manifests:__subpackages__"],
+    deps = [
+        "//kube",
+        "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1:apiextensions",
+        "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1beta1",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/serializer",
+        "@io_k8s_client_go//kubernetes/scheme",
+    ],
+)
+
+go_test(
+    name = "internal_test",
+    srcs = ["assets_test.go"],
+    deps = [
+        ":internal",
+        "@com_github_stretchr_testify//require",
+    ],
+)

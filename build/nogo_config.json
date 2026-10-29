@@ -1,0 +1,19 @@
+{
+	"_base": {
+    "exclude_files": {
+		"external/.*$": "ignore 3rd-party code",
+		"^.*\\.pb\\.go$": "ignore generated code",
+		"^migration/internal/mysql/internal/parser/mysql_parser.go$": "ignore (probably) generated code",
+		"^migration/internal/oracle/internal/parser/plsql_parser.go$": "ignore (probably) generated code",
+		"^migration/internal/mssql/internal/parser/tsql_parser.go$": "ignore (probably) generated code",
+		"^operators/cockroach-operator/kubecrdb/kubenet/dbconsole_gen.go$": "ignore generated code"
+	}
+	},
+  "sqlsafe": {
+    "exclude_files": {
+      "external/.*$": "ignore 3rd-party code",
+	  "pkg/utils/errors.go$": "false positive",
+	  "pkg/utils/treeprinter/.*$": "false positives"
+    }
+  }
+}

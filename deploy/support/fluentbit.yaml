@@ -1,0 +1,73 @@
+# This manifest deploys FluentBit as a DaemonSet on the cluster. Sincew v21.1 CRDB supports writing
+# logs directly to fluentd via TCP which removes the need to run a sidecar.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentbit-config
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Daemon       Off
+        Log_Level    info
+
+    [INPUT]
+        Name              tcp
+        Listen            0.0.0.0
+        Port              5170
+
+    [INPUT]
+        Name              tcp
+        Listen            0.0.0.0
+        Port              5171
+
+    [OUTPUT]
+        Name              stdout
+        Match             *
+---
+# Create a headless service to make reaching the fluentbit daemon set
+# more ergonomic.
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluentbit
+  namespace: default
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: fluent-bit
+  ports:
+    - name: tcp
+      port: 5171
+      targetPort: 5171
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentbit
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+        - name: fluent-bit
+          imagePullPolicy: Always
+          image: fluent/fluent-bit:1.7.8
+          ports:
+          - containerPort: 5171
+            hostPort: 5171
+            protocol: TCP
+          volumeMounts:
+            - name: fluentbit-config
+              mountPath: /fluent-bit/etc/
+      volumes:
+        - name: fluentbit-config
+          configMap:
+            name: fluentbit-config

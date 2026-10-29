@@ -1,0 +1,10 @@
+{{- if .Values.loggingConf }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-logging
+  namespace: {{ .Release.Namespace }}
+data:
+  logs.yaml: | {{ toYaml .Values.loggingConf | nindent 4 }}
+{{- end }}

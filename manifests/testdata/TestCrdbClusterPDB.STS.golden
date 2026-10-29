@@ -1,0 +1,20 @@
+{
+	"metadata": {
+		"name": "cockroachdb-pdb",
+		"creationTimestamp": null
+	},
+	"spec": {
+		"selector": {
+			"matchLabels": {
+				"app": "cockroachdb"
+			}
+		},
+		"maxUnavailable": 1
+	},
+	"status": {
+		"disruptionsAllowed": 0,
+		"currentHealthy": 0,
+		"desiredHealthy": 0,
+		"expectedPods": 0
+	}
+}

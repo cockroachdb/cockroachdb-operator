@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "opserver",
+    srcs = [
+        "scale_tenant.go",
+        "server.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/opserver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//autoscaler",
+        "//cloud",
+        "//kube",
+        "//kube/kubeerrors",
+        "//metrics",
+        "//operatorpb",
+        "//pkg/logging",
+        "//pkg/mtls",
+        "//tenant",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_gogo_status//:status",
+        "@com_github_grpc_ecosystem_go_grpc_prometheus//:go-grpc-prometheus",
+        "@io_k8s_sigs_controller_runtime//pkg/manager",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//codes",
+    ],
+)
+
+go_test(
+    name = "opserver_test",
+    srcs = [
+        "scale_tenant_integration_test.go",
+        "scale_tenant_test.go",
+    ],
+    embed = [":opserver"],
+    deps = [
+        "//api/v1beta1",
+        "//autoscaler",
+        "//cloud",
+        "//crypto",
+        "//kube",
+        "//kube/kubetest",
+        "//manifests",
+        "//metrics",
+        "//operatorpb",
+        "//pkg/testutils",
+        "//tenant",
+        "//tenant/tenantmock:mocks",
+        "//testenv",
+        "//testmanifest",
+        "@com_github_cenkalti_backoff//:backoff",
+        "@com_github_gogo_status//:status",
+        "@com_github_golang_mock//gomock",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/fields",
+        "@org_golang_google_grpc//codes",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "clusterutil",
+    srcs = ["cluster.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/util/clusterutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1beta1",
+        "//controllers/metrics",
+        "//kube",
+        "//kube/kubeerrors",
+        "//pkg/logging",
+        "@com_github_cockroachdb_errors//:errors",
+    ],
+)
+
+go_test(
+    name = "clusterutil_test",
+    srcs = ["cluster_test.go"],
+    embed = [":clusterutil"],
+    deps = [
+        "//api/v1beta1",
+        "//kube",
+        "//kube/kubetest",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

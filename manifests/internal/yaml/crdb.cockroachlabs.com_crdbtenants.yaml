@@ -1,0 +1,218 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.5
+  name: crdbtenants.crdb.cockroachlabs.com
+spec:
+  group: crdb.cockroachlabs.com
+  names:
+    kind: CrdbTenant
+    listKind: CrdbTenantList
+    plural: crdbtenants
+    singular: crdbtenant
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          CrdbTenant is the schema for the crdbtenants API.
+          NOTE: Don't add new fields to this struct. Instead, add fields describing
+          the desired state of the CrdbTenant to CrdbTenantSpec, and fields describing
+          the observed state of the CrdbTenant to CrdbTenantStatus.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CrdbTenantSpec defines the desired state of CrdbTenant.
+            properties:
+              allowedCIDRRanges:
+                description: |-
+                  AllowedCIDRRanges specifies which IP address ranges are allowed to access
+                  a cluster. An empty list means no public connections are allowed.
+                  We purposefully choose to leave off the omitempty to ensure that empty
+                  slices can be treated differently from nil slices by the tenant directory.
+                items:
+                  type: string
+                type: array
+              allowedPrivateEndpoints:
+                description: |-
+                  AllowedPrivateEndpoints specifies the list of private endpoints
+                  identifiers for private connectivity. An empty list means no private
+                  connections are allowed.
+                items:
+                  type: string
+                type: array
+              disableAutoscale:
+                description: |-
+                  DisableAutoscale prohibits the autoscaler from updating the Pods field.
+                  This is useful to set in tests or when the autoscaler is not wanted for
+                  this tenant.
+                type: boolean
+              fluentbit:
+                description: |-
+                  Fluentbit, if defined, specifies the configuration for the Fluentbit
+                  process that runs as a sidecar within each SQL pod. When not defined,
+                  the operator will use a default noop configuration for the Fluentbit
+                  process.
+                properties:
+                  configMapName:
+                    description: |-
+                      ConfigMapName is the name of the ConfigMap object containing config for
+                      the FluentBit process.
+                    type: string
+                required:
+                - configMapName
+                type: object
+              maxPods:
+                description: |-
+                  MaxPods is the maximum number of SQL tenant pods that can be stamped and
+                  running for this tenant. If nil, then the value of TenantPool.MaxPods is
+                  used. If the tenant pool is not available, or does not define MaxPods,
+                  then no max limit will be enforced.
+                  NOTE: The autoscaler will never set Pods > MaxPods, even if load is high.
+                format: int32
+                minimum: 0
+                type: integer
+              otelCollector:
+                description: |-
+                  OtelCollector, if defined, specifies the configuration for the
+                  OpenTelemetry Collector process that runs as a sidecar within each SQL
+                  pod.
+                properties:
+                  awsExternalID:
+                    description: |-
+                      AWSExternalID is an identifier that the operator will use when generating
+                      credentials for AWSRoleARN. This field must be set for IAM roles that
+                      enforce who can assume such a role via external IDs. One benefit to doing
+                      so is that this addresses the confused deputy problem in the case of a
+                      multi-tenant AWS account.
+                      See: https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html
+                    type: string
+                  awsLogsRoleArn:
+                    description: |-
+                      AWSLogsRoleARN is the name of the IAM resource that the operator will need
+                      to generate credentials for and supply to the OpenTelemetry Collector
+                      process when exporting logs to a tenant's AWS CloudWatch sink.
+                    type: string
+                  awsMetricsRoleArn:
+                    description: |-
+                      AWSMetricsRoleARN is the name of the IAM resource that the operator will need
+                      to generate credentials for and supply to the OpenTelemetry Collector
+                      process when exporting metrics to a tenant's AWS CloudWatch sink.
+                    type: string
+                  configMapName:
+                    description: |-
+                      ConfigMapName is the name of the ConfigMap object containing config for
+                      the OpenTelemetry Collector process.
+                    type: string
+                  gcpLogsServiceAccount:
+                    description: |-
+                      GCPLogsServiceAccount is the name of the GCP service account that the operator
+                      will need to generate credentials for and supply to the OpenTelemetry Collector
+                      process when exporting logs to a tenant's GCP cloud logging sink.
+                    type: string
+                  secretName:
+                    description: |-
+                      SecretName is the name of the Secret object containing secrets for the
+                      OpenTelemetry Collector process. Key-value pairs in the secret will be
+                      sent to the agent sidecar container as files ending with .env
+                      (e.g. DD_API_KEY.env), and injected as environment variables.
+                    type: string
+                required:
+                - configMapName
+                type: object
+              pods:
+                description: |-
+                  Pods is the number of SQL tenant pods that should be stamped and running
+                  for this tenant. Pods must always be <= MaxPods.
+                format: int32
+                type: integer
+              tenantID:
+                description: |-
+                  TenantID is the unique identifier of the tenant within its host cluster.
+                  The caller is responsible for ensuring that different tenants within the
+                  host clusters each have a different TenantID.
+                  NOTE: Two tenants from different host clusters may have the same ID.
+                format: int64
+                type: integer
+              tenantPool:
+                default: default
+                description: |-
+                  TenantPool is the name of the TenantPool, defined by the host cluster,
+                  that tenant will run in. Defaults to "default".
+                type: string
+            required:
+            - pods
+            - tenantID
+            - tenantPool
+            type: object
+          status:
+            description: CrdbTenantStatus defines the observed state of CrdbTenant.
+            properties:
+              conditions:
+                description: |-
+                  Conditions are the set of current status indicators for the tenant. For
+                  example, once a tenant has been fully initialized, a TenantInitialized
+                  condition will be added to the list and set to True.
+                items:
+                  description: |-
+                    TenantCondition describes the current state of some aspect of the tenant's
+                    status. The operator will add these to the Conditions list as it completes
+                    work.
+                    NOTE: Conditions should always be able to be reconstructed by the operator
+                    based on observations it makes about the state of the tenant; these
+                    conditions only exist to speed up reconciliation and to provide additional
+                    observability to the user.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the time at which the condition
+                        was last updated.
+                      format: date-time
+                      type: string
+                    status:
+                      description: 'Status is the current state of the condition:
+                        True, False or Unknown.'
+                      type: string
+                    type:
+                      description: Type is the kind of this condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+              pods:
+                description: |-
+                  Pods is the number of SQL tenant pods that are currently stamped and
+                  running for this tenant. Note that pods in this list may be unhealthy;
+                  there is a delay between a pod failing and that being reflected in this
+                  status.
+                format: int32
+                type: integer
+            required:
+            - pods
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

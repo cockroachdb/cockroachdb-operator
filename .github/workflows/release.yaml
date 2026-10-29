@@ -1,0 +1,144 @@
+name: Release
+
+# Triggered by pushing a version tag. Supports both GA releases (v1.0.0) and
+# release candidates (v1.0.0-rc.1). Merges to main continue producing
+# SHA-tagged dev images via publish.yaml. This workflow produces version-tagged
+# release images pushed to GAR and DockerHub.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build and push release images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      HAS_DOCKERHUB: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: ./.github/actions/free-disk-space
+
+    - name: Extract version from tag
+      id: version
+      run: |
+        TAG="${GITHUB_REF#refs/tags/}"
+        VERSION="${TAG#v}"
+
+        # Determine if this is a release candidate (e.g. v1.0.0-rc.1)
+        if echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "prerelease=false" >> "$GITHUB_OUTPUT"
+        elif echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-'; then
+          echo "prerelease=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "ERROR: Tag $TAG does not match expected format (v1.0.0 or v1.0.0-rc.1)"
+          exit 1
+        fi
+
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+    - name: Validate VERSION file matches tag
+      if: steps.version.outputs.prerelease == 'false'
+      run: |
+        FILE_VERSION="$(tr -d '[:space:]' < VERSION)"
+        TAG_VERSION="${{ steps.version.outputs.version }}"
+        if [ "$FILE_VERSION" != "$TAG_VERSION" ]; then
+          echo "ERROR: VERSION file ($FILE_VERSION) does not match tag ($TAG_VERSION)"
+          exit 1
+        fi
+
+    - name: Validate VERSION file matches tag base version
+      if: steps.version.outputs.prerelease == 'true'
+      run: |
+        FILE_VERSION="$(tr -d '[:space:]' < VERSION)"
+        TAG_VERSION="${{ steps.version.outputs.version }}"
+        # Extract base version from prerelease tag (e.g. 1.0.0-rc.1 -> 1.0.0)
+        TAG_BASE="${TAG_VERSION%%-*}"
+        if [ "$FILE_VERSION" != "$TAG_BASE" ]; then
+          echo "ERROR: VERSION file ($FILE_VERSION) does not match tag base version ($TAG_BASE)"
+          exit 1
+        fi
+
+    # Bazel's go_repository fetches the private github.com/cockroachlabs/version
+    # module during image builds. This action mints access for that repo and
+    # configures git before the release image pushes run.
+    - uses: cockroachdb/actions/setup-private-go-modules@v0
+      with:
+        repositories: cockroachlabs/version
+
+    # GCP auth for pushing to releases-prod GAR registry.
+    - name: Authenticate to Google Cloud
+      uses: 'google-github-actions/auth@v2'
+      id: auth
+      with:
+        token_format: access_token
+        project_id: releases-prod
+        workload_identity_provider: projects/182391335559/locations/global/workloadIdentityPools/self-hosted-github-oidc/providers/self-hosted-github-oidc
+        service_account: self-hosted@releases-prod.iam.gserviceaccount.com
+
+    - name: Set up gcloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configure docker CLI for GAR
+      run: gcloud auth configure-docker us-docker.pkg.dev
+
+    - name: Login to DockerHub
+      if: env.HAS_DOCKERHUB == 'true'
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - uses: bazel-contrib/setup-bazel@0.14.0
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+
+    # TODO: Uncomment once GAR image cleanup permissions are sorted out.
+    # - name: Validate images do not already exist
+    #   run: |
+    #     VERSION="${{ steps.version.outputs.version }}"
+    #     IMAGES=(
+    #       "us-docker.pkg.dev/releases-prod/self-hosted/cockroachdb-operator:v${VERSION}"
+    #       "us-docker.pkg.dev/releases-prod/self-hosted/init-container:v${VERSION}"
+    #       "us-docker.pkg.dev/releases-prod/self-hosted/inotifywait:v${VERSION}"
+    #     )
+    #     for IMAGE in "${IMAGES[@]}"; do
+    #       if gcloud artifacts docker images describe "$IMAGE" > /dev/null 2>&1; then
+    #         echo "ERROR: Image already exists: $IMAGE"
+    #         echo "Delete the existing image or use a new version tag."
+    #         exit 1
+    #       fi
+    #       echo "OK: $IMAGE does not exist yet"
+    #     done
+
+    # Push all three images (operator, init-container, cert-reloader) to
+    # DockerHub and GAR. For RC tags (e.g. v1.0.0-rc.1),
+    # OPERATOR_VERSION_OVERRIDE tags images with the full prerelease
+    # version instead of the base version from the VERSION file.
+    - name: Push images to DockerHub
+      if: env.HAS_DOCKERHUB == 'true'
+      run: |
+        bazel run --config=ubi :push_dockerhub --stamp
+        bazel run --config=ubi //services/init-container:push_dockerhub --stamp
+        bazel run --config=ubi //services/inotifywait:push_dockerhub --stamp
+      env:
+        OPERATOR_VERSION_OVERRIDE: ${{ steps.version.outputs.version }}
+
+    - name: Push images to GAR
+      run: |
+        bazel run --config=ubi :push_production_ubi --stamp
+        bazel run --config=ubi //services/init-container:push_production_ubi --stamp
+        bazel run --config=ubi //services/inotifywait:push_production_ubi --stamp
+      env:
+        OPERATOR_VERSION_OVERRIDE: ${{ steps.version.outputs.version }}
+
+    - uses: ./.github/actions/trim-bazel-cache
+      if: always()

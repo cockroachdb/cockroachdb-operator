@@ -1,0 +1,72 @@
+[
+	{
+		"apiVersion": "networking.k8s.io/v1",
+		"kind": "NetworkPolicy",
+		"metadata": {
+			"annotations": {},
+			"creationTimestamp": null,
+			"labels": {
+				"tenant-id": "20"
+			},
+			"name": "tenant-20",
+			"namespace": "test-ns",
+			"ownerReferences": [
+				{
+					"apiVersion": "crdb.cockroachlabs.com/v1beta1",
+					"controller": true,
+					"kind": "CrdbTenant",
+					"name": "tenant-20",
+					"uid": "\u003credacted\u003e"
+				}
+			]
+		},
+		"spec": {
+			"egress": [
+				{
+					"to": [
+						{
+							"namespaceSelector": {},
+							"podSelector": {
+								"matchLabels": {
+									"tenant-id": "20"
+								}
+							}
+						}
+					]
+				}
+			],
+			"ingress": [
+				{
+					"from": [
+						{
+							"namespaceSelector": {},
+							"podSelector": {
+								"matchLabels": {
+									"tenant-id": "20"
+								}
+							}
+						}
+					]
+				},
+				{
+					"from": [
+						{
+							"namespaceSelector": {},
+							"podSelector": {
+								"matchLabels": {
+									"name": "tailscale"
+								}
+							}
+						}
+					]
+				}
+			],
+			"podSelector": {
+				"matchLabels": {
+					"tenant-id": "20"
+				}
+			}
+		},
+		"status": {}
+	}
+]

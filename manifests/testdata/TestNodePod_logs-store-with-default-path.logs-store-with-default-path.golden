@@ -1,0 +1,266 @@
+{
+	"metadata": {
+		"name": "test",
+		"namespace": "testns",
+		"creationTimestamp": null,
+		"labels": {
+			"app": "cockroachdb",
+			"cluster": "",
+			"crdb.cockroachlabs.com/cluster": "crdb-test",
+			"crdb.cockroachlabs.com/podName": "test",
+			"svc": "cockroachdb"
+		},
+		"annotations": {
+			"crdb.cockroachlabs.com/nodeGeneration": "0",
+			"crdb.cockroachlabs.com/nodeRevision": "fc21a341a0ab1a24"
+		}
+	},
+	"spec": {
+		"volumes": [
+			{
+				"name": "datadir",
+				"persistentVolumeClaim": {
+					"claimName": "testpvc-test"
+				}
+			},
+			{
+				"name": "cockroach-env",
+				"emptyDir": {}
+			},
+			{
+				"name": "logsdir",
+				"persistentVolumeClaim": {
+					"claimName": "logspvc-test"
+				}
+			},
+			{
+				"name": "certs",
+				"projected": {
+					"sources": [
+						{
+							"secret": {
+								"name": "node-certs",
+								"items": [
+									{
+										"key": "tls.crt",
+										"path": "node.crt"
+									},
+									{
+										"key": "tls.key",
+										"path": "node.key"
+									}
+								]
+							}
+						},
+						{
+							"secret": {
+								"name": "client-certs",
+								"items": [
+									{
+										"key": "tls.crt",
+										"path": "client.root.crt"
+									},
+									{
+										"key": "tls.key",
+										"path": "client.root.key"
+									}
+								]
+							}
+						},
+						{
+							"configMap": {
+								"name": "node-ca",
+								"items": [
+									{
+										"key": "ca.crt",
+										"path": "ca.crt"
+									}
+								]
+							}
+						},
+						{
+							"configMap": {
+								"name": "client-ca",
+								"items": [
+									{
+										"key": "ca.crt",
+										"path": "ca-client.crt"
+									}
+								]
+							}
+						}
+					],
+					"defaultMode": 288
+				}
+			}
+		],
+		"initContainers": [
+			{
+				"name": "cockroachdb-init",
+				"image": "us-docker.pkg.dev/cockroach-cloud-images/data-plane/init-container:1b34da213707c4a89c7e794a19fbbfef5a1affe8",
+				"command": [
+					"init-container",
+					"-locality-dest",
+					"/etc/cockroach-env"
+				],
+				"env": [
+					{
+						"name": "KUBERNETES_NODE",
+						"valueFrom": {
+							"fieldRef": {
+								"fieldPath": "spec.nodeName"
+							}
+						}
+					},
+					{
+						"name": "PUSHGATEWAY_NAMESPACE",
+						"value": "monitoring-testns"
+					},
+					{
+						"name": "ERROR_ON_MISSING_LABELS",
+						"value": "1"
+					}
+				],
+				"resources": {},
+				"volumeMounts": [
+					{
+						"name": "cockroach-env",
+						"mountPath": "/etc/cockroach-env"
+					}
+				]
+			}
+		],
+		"containers": [
+			{
+				"name": "cockroachdb",
+				"image": "testimage",
+				"command": [
+					"/bin/bash",
+					"-exc",
+					"ulimit -S -n 1048576;  exec /cockroach/cockroach start --insecure --listen-addr 0.0.0.0:26258 --http-addr 0.0.0.0:8080 --sql-addr 0.0.0.0:26257 --advertise-addr test.crdb-test.testns.svc.cluster.local:26258 --advertise-sql-addr test.crdb-test.testns.svc.cluster.local:26257 --join  $(cat /etc/cockroach-env/locality),dns=test.crdb-test.testns.svc.cluster.local --log='sinks: {stderr: {channels: {INFO: \"HEALTH,OPS\", WARNING: \"STORAGE,DEV\"}}}' --cache=25% --max-sql-memory=25%"
+				],
+				"ports": [
+					{
+						"name": "grpc",
+						"containerPort": 26258,
+						"protocol": "TCP"
+					},
+					{
+						"name": "http",
+						"containerPort": 8080,
+						"protocol": "TCP"
+					},
+					{
+						"name": "sql",
+						"containerPort": 26257,
+						"protocol": "TCP"
+					}
+				],
+				"env": [
+					{
+						"name": "COCKROACH_INSECURE",
+						"value": "true"
+					},
+					{
+						"name": "COCKROACH_HOST",
+						"value": "localhost:26257"
+					},
+					{
+						"name": "COCKROACH_RPC_PORT",
+						"value": "26258"
+					},
+					{
+						"name": "COCKROACH_SQL_PORT",
+						"value": "26257"
+					},
+					{
+						"name": "HOST_IP",
+						"valueFrom": {
+							"fieldRef": {
+								"apiVersion": "v1",
+								"fieldPath": "status.hostIP"
+							}
+						}
+					}
+				],
+				"resources": {
+					"limits": {
+						"memory": "0"
+					},
+					"requests": {
+						"memory": "0"
+					}
+				},
+				"volumeMounts": [
+					{
+						"name": "cockroach-env",
+						"readOnly": true,
+						"mountPath": "/etc/cockroach-env"
+					},
+					{
+						"name": "datadir",
+						"mountPath": "/cockroach/cockroach-data"
+					},
+					{
+						"name": "logsdir",
+						"mountPath": "/cockroach/cockroach-data/logs"
+					}
+				],
+				"readinessProbe": {
+					"httpGet": {
+						"path": "/health?ready=1",
+						"port": "http",
+						"scheme": "HTTP"
+					},
+					"initialDelaySeconds": 10,
+					"timeoutSeconds": 10,
+					"periodSeconds": 10,
+					"successThreshold": 1,
+					"failureThreshold": 2
+				},
+				"securityContext": {
+					"capabilities": {
+						"drop": [
+							"ALL"
+						]
+					},
+					"privileged": false,
+					"readOnlyRootFilesystem": true,
+					"allowPrivilegeEscalation": false
+				}
+			}
+		],
+		"terminationGracePeriodSeconds": 2700,
+		"serviceAccountName": "testsa",
+		"shareProcessNamespace": false,
+		"securityContext": {
+			"runAsUser": 1000,
+			"runAsGroup": 1000,
+			"runAsNonRoot": false,
+			"fsGroup": 1000,
+			"fsGroupChangePolicy": "OnRootMismatch"
+		},
+		"hostname": "test",
+		"subdomain": "crdb-test",
+		"affinity": {
+			"podAntiAffinity": {
+				"requiredDuringSchedulingIgnoredDuringExecution": [
+					{
+						"labelSelector": {
+							"matchLabels": {
+								"app": "cockroachdb",
+								"crdb.cockroachlabs.com/cluster": "crdb-test"
+							}
+						},
+						"namespaces": [
+							"testns"
+						],
+						"topologyKey": "kubernetes.io/hostname"
+					}
+				]
+			}
+		},
+		"priorityClassName": "crdb-critical"
+	},
+	"status": {}
+}

@@ -1,0 +1,82 @@
+[
+	{
+		"metadata": {
+			"name": "foobar",
+			"namespace": "my-ns",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "foobar"
+			}
+		}
+	},
+	{
+		"metadata": {
+			"name": "tenantdir",
+			"namespace": "my-ns",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "foobar"
+			}
+		},
+		"rules": [
+			{
+				"verbs": [
+					"get",
+					"update",
+					"watch"
+				],
+				"apiGroups": [
+					"crdb.cockroachlabs.com"
+				],
+				"resources": [
+					"crdbtenants"
+				]
+			},
+			{
+				"verbs": [
+					"list"
+				],
+				"apiGroups": [
+					"crdb.cockroachlabs.com"
+				],
+				"resources": [
+					"crdbclusters"
+				]
+			},
+			{
+				"verbs": [
+					"list",
+					"watch"
+				],
+				"apiGroups": [
+					""
+				],
+				"resources": [
+					"pods"
+				]
+			}
+		]
+	},
+	{
+		"metadata": {
+			"name": "tenantdir",
+			"namespace": "my-ns",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "foobar"
+			}
+		},
+		"subjects": [
+			{
+				"kind": "ServiceAccount",
+				"name": "foobar",
+				"namespace": "my-ns"
+			}
+		],
+		"roleRef": {
+			"apiGroup": "rbac.authorization.k8s.io",
+			"kind": "Role",
+			"name": "tenantdir"
+		}
+	}
+]

@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# ---------------------------------------------------------------------------
+# go-test-record
+#   go-test-record makes it easy to re-record failed copyist and kuberecord
+#   tests (https://github.com/cockroachdb/copyist has more details about
+#   copyist). To use, run this script at the root, passing the test(s) that
+#   it will execute:
+#
+#     go-test-record ./console/...
+#
+#   The script will first run the test(s) with recording disabled. Then, if
+#   any test packages fail, it will rerun just those packages, but this time
+#   with recording enabled.
+#
+#   This script is useful to run just after rebasing, when there are multiple
+#   merge conflicts caused by recording files. It's also useful to run after
+#   making a change that requires many recordings to be re-generated (e.g.
+#   after changing a commonly used fixture).
+# ---------------------------------------------------------------------------
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+GO_TEST_ARGS=${@:?Must supply Go test arguments, e.g. ./console/...}
+
+# Pipe test logs both to stdout and to a temp log file.
+echo -e "${GREEN}Running tests with recording disabled${NC}"
+TEMP_LOG_FILE=$(mktemp)
+go test $GO_TEST_ARGS | tee $TEMP_LOG_FILE
+
+MODULE_NAME="$(head -1 "$(go env GOMOD)" | cut -d ' ' -f2)"
+MODULE_DIR="$(dirname "$(go env GOMOD)")"
+
+# Create a list of all directories containing at least one failed test. Tests
+# in these directories will need to be re-run, but with recording enabled.
+RERUN_DIRS=`
+  awk \
+    -v module_name="$MODULE_NAME/" \
+    -v module_dir="$MODULE_DIR" \
+    '$1 ~ /FAIL/ && $2 != "" { sub(module_name, "", $2); printf "%s/%s\n", module_dir, $2 }' \
+    $TEMP_LOG_FILE \
+`
+
+echo $RERUN_DIRS
+
+if [ "$RERUN_DIRS" != "" ]
+then
+  echo -e "${RED}Rerunning failed tests with recording enabled${NC}"
+  COPYIST_RECORD=1 UPDATE_GOLDEN=1 KUBERECORD=record go test $RERUN_DIRS -p=1 -v
+fi
+
+rm $TEMP_LOG_FILE
+

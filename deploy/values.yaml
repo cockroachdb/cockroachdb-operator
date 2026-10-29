@@ -1,0 +1,18 @@
+# You can set cluster values globally from here
+cluster:
+  image:
+    tag: "v21.2.8"
+  clusterSettings:
+    cluster.organization: testorg
+  regions:
+    - code: us-east-1
+      nodes: 3
+      cloudProvider: k3d
+    - code: us-west-1
+      nodes: 3
+      cloudProvider: aws
+
+operator:
+  image:
+    repository: localhost:5000/cockroach-operator
+    tag: latest

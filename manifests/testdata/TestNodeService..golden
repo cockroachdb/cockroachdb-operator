@@ -1,0 +1,40 @@
+{
+	"metadata": {
+		"name": "crdb-test",
+		"namespace": "bogus-ns",
+		"creationTimestamp": null,
+		"labels": {
+			"app": "cockroachdb",
+			"crdb.cockroachlabs.com/cluster": "crdb-test"
+		}
+	},
+	"spec": {
+		"ports": [
+			{
+				"name": "sql",
+				"port": 26257,
+				"targetPort": 26257
+			},
+			{
+				"name": "grpc",
+				"port": 26258,
+				"targetPort": "grpc"
+			},
+			{
+				"name": "http",
+				"port": 8080,
+				"targetPort": 8080
+			}
+		],
+		"selector": {
+			"crdb.cockroachlabs.com/cluster": "crdb-test",
+			"svc": "cockroachdb"
+		},
+		"clusterIP": "None",
+		"type": "ClusterIP",
+		"publishNotReadyAddresses": true
+	},
+	"status": {
+		"loadBalancer": {}
+	}
+}

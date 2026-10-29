@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "v1beta1",
+    srcs = [
+        "action_status.go",
+        "action_types.go",
+        "crdbcluster_conditions.go",
+        "crdbcluster_conversion.go",
+        "crdbcluster_features.go",
+        "crdbcluster_types.go",
+        "crdbnode_types.go",
+        "crdbtenant_conditions.go",
+        "crdbtenant_types.go",
+        "groupversion_info.go",
+        "make_ready.go",
+        "scheme.go",
+        "tenant_id.go",
+        "zz_generated.deepcopy.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/api/v1beta1",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//securitycontext",
+        "//util/timeutil",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_cockroachlabs_version//:version",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1:apiextensions",
+        "@io_k8s_apiextensions_apiserver//pkg/apis/apiextensions/v1beta1",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_apimachinery//pkg/util/runtime",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_sigs_controller_runtime//pkg/scheme",
+        "@io_k8s_utils//pointer",
+    ],
+)
+
+go_test(
+    name = "v1beta1_test",
+    srcs = [
+        "crdbcluster_types_test.go",
+        "crdbnode_types_test.go",
+        "crdbtenant_types_test.go",
+        "make_ready_test.go",
+        "tenant_id_test.go",
+    ],
+    embed = [":v1beta1"],
+    deps = [
+        "//pkg/testutils",
+        "//util/timeutil",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

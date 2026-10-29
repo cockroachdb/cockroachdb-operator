@@ -1,0 +1,90 @@
+typemeta:
+  kind: ""
+  apiversion: ""
+objectmeta:
+  name: cockroachdb-logging
+  generatename: ""
+  namespace: ""
+  selflink: ""
+  uid: ""
+  resourceversion: ""
+  generation: 0
+  creationtimestamp: "0001-01-01T00:00:00Z"
+  deletiontimestamp: null
+  deletiongraceperiodseconds: null
+  labels: {}
+  annotations: {}
+  ownerreferences: []
+  finalizers: []
+  clustername: ""
+  managedfields: []
+immutable: null
+data:
+  logs.yaml: |
+    file-defaults:
+      dir: /cockroach/cockroach-data/logs
+      max-file-size: 10MiB
+      max-group-size: 100MiB
+      buffered-writes: true
+      filter: INFO
+      format: crdb-v2
+      redact: false
+      redactable: true
+      exit-on-error: true
+      auditable: false
+    fluent-defaults:
+      filter: INFO
+      format: json-fluent
+      redact: false
+      redactable: true
+      exit-on-error: false
+      auditable: false
+      buffering:
+        max-staleness: 5s
+        flush-trigger-size: 1.0MiB
+        max-buffer-size: 50MiB
+    sinks:
+      file-groups:
+        default:
+          channels: {INFO: [OPS, SQL_SCHEMA, USER_ADMIN, PRIVILEGES]}
+        dev:
+          channels: {INFO: [DEV]}
+        health:
+          channels: {INFO: [HEALTH]}
+        pebble:
+          channels: {INFO: [STORAGE]}
+        sql-audit:
+          channels: {INFO: [SENSITIVE_ACCESS]}
+        sql-auth:
+          channels: {INFO: [SESSIONS]}
+        sql-exec:
+          channels: {INFO: [SQL_EXEC]}
+        sql-slow:
+          channels: {INFO: [SQL_PERF]}
+        sql-slow-internal-only:
+          channels: {INFO: [SQL_INTERNAL_PERF]}
+      fluent-servers:
+        fluentbit-customer:
+          channels: {INFO: all}
+          net: tcp
+          address: ${HOST_IP}:5171
+          filter: INFO
+          redact: false
+        fluentbit-redacted:
+          channels: {INFO: all}
+          net: tcp
+          address: ${HOST_IP}:5170
+          filter: INFO
+          redact: true
+      stderr:
+        channels: {INFO: [HEALTH, OPS], WARNING: [DEV, STORAGE, SESSIONS, SQL_SCHEMA,
+            USER_ADMIN, PRIVILEGES, SENSITIVE_ACCESS, SQL_EXEC, SQL_PERF, SQL_INTERNAL_PERF,
+            TELEMETRY, KV_DISTRIBUTION]}
+        filter: INFO
+        format: crdb-v2-tty
+        redact: true
+        exit-on-error: true
+    capture-stray-errors:
+      enable: true
+      max-group-size: 100MiB
+binarydata: {}

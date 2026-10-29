@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metrics",
+    srcs = ["metrics.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/controllers/metrics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//kube/kubemetrics",
+        "@com_github_grpc_ecosystem_go_grpc_prometheus//:go-grpc-prometheus",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics",
+    ],
+)

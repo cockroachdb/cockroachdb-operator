@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tools",
+    srcs = ["tools.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/tools",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_x_tools_go_vcs//:vcs"],
+)

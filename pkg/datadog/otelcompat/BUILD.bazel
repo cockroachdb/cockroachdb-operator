@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "otelcompat",
+    srcs = ["ids.go"],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/datadog/otelcompat",
+    visibility = ["//visibility:public"],
+    deps = ["@io_opentelemetry_go_otel_trace//:trace"],
+)
+
+go_test(
+    name = "otelcompat_test",
+    srcs = ["ids_test.go"],
+    embed = [":otelcompat"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

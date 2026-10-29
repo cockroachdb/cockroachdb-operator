@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "logconfig",
+    srcs = [
+        "config.go",
+        "doc.go",
+        "export.go",
+        "validate.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/pkg/cockroach/logconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/cockroach/logpb",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_dustin_go_humanize//:go-humanize",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)

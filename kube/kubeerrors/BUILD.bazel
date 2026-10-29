@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "kubeerrors",
+    srcs = [
+        "doc.go",
+        "errors.go",
+    ],
+    importpath = "github.com/cockroachlabs/cockroach-enterprise-operator/kube/kubeerrors",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_cockroachdb_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+go_test(
+    name = "kubeerrors_test",
+    srcs = ["errors_test.go"],
+    embed = [":kubeerrors"],
+    deps = [
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
+    ],
+)

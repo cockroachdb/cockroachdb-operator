@@ -1,0 +1,115 @@
+[
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"namespace": "default",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			},
+			"annotations": {
+				"iam.gke.io/gcp-service-account": "crdb-wi-b3ffc8653b8b@cockroach-test.iam.gserviceaccount.com"
+			}
+		}
+	},
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"rules": [
+			{
+				"verbs": [
+					"create",
+					"get"
+				],
+				"apiGroups": [
+					""
+				],
+				"resources": [
+					"secrets"
+				]
+			}
+		]
+	},
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"rules": [
+			{
+				"verbs": [
+					"create",
+					"get",
+					"watch"
+				],
+				"apiGroups": [
+					"certificates.k8s.io"
+				],
+				"resources": [
+					"certificatesigningrequests"
+				]
+			},
+			{
+				"verbs": [
+					"get"
+				],
+				"apiGroups": [
+					""
+				],
+				"resources": [
+					"nodes"
+				]
+			}
+		]
+	},
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"subjects": [
+			{
+				"kind": "ServiceAccount",
+				"name": "cockroachdb",
+				"namespace": "default"
+			}
+		],
+		"roleRef": {
+			"apiGroup": "rbac.authorization.k8s.io",
+			"kind": "Role",
+			"name": "cockroachdb"
+		}
+	},
+	{
+		"metadata": {
+			"name": "cockroachdb",
+			"creationTimestamp": null,
+			"labels": {
+				"app": "cockroachdb"
+			}
+		},
+		"subjects": [
+			{
+				"kind": "ServiceAccount",
+				"name": "cockroachdb",
+				"namespace": "default"
+			}
+		],
+		"roleRef": {
+			"apiGroup": "rbac.authorization.k8s.io",
+			"kind": "ClusterRole",
+			"name": "cockroachdb"
+		}
+	}
+]
